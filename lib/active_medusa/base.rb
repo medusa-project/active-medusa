@@ -3,7 +3,9 @@ require 'active_medusa/querying'
 require 'active_medusa/solr'
 require 'active_medusa/sparql_update'
 require 'active_medusa/transactions'
+require 'active_model'
 require 'active_support/inflector'
+require 'globalid'
 require 'rdf'
 
 module ActiveMedusa

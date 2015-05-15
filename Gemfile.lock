@@ -7,9 +7,10 @@ GIT
 PATH
   remote: .
   specs:
-    active-medusa (0.0.0)
+    active-medusa (0.1.0)
       activemodel
       activesupport
+      globalid
       rdf
       rsolr
 
@@ -26,6 +27,8 @@ GEM
       thread_safe (~> 0.3, >= 0.3.4)
       tzinfo (~> 1.1)
     builder (3.2.2)
+    globalid (0.3.5)
+      activesupport (>= 4.1.0)
     i18n (0.7.0)
     json (1.8.2)
     link_header (0.0.8)
@@ -47,8 +50,9 @@ PLATFORMS
 
 DEPENDENCIES
   active-medusa!
+  bundler (~> 1.9)
   httpclient!
   minitest
-  rake
+  rake (~> 10.0)
   rdoc
   yard
