@@ -1,12 +1,12 @@
-require 'minitest_helper'
+require 'test_helper'
 
-class TestSparqlUpdate < ActiveSupport::TestCase
+class SparqlUpdateTest < Minitest::Test
 
-  setup do
+  def setup
     @update = ActiveMedusa::SPARQLUpdate.new
   end
 
-  test 'to_s should assemble a correct SPARQL update' do
+  def test_to_s_should_assemble_a_correct_SPARQL_update
     expected = 'PREFIX dc: <http://purl.org/dc/elements/1.1/>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX indexing: <http://fedora.info/definitions/v4/indexing#>
