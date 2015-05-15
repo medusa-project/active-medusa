@@ -5,7 +5,7 @@ module ActiveMedusa
   #
   class Configuration
 
-    @@instance
+    @@instance = nil
 
     attr_accessor :fedora_url
     attr_accessor :fedora_indexing_transformation
