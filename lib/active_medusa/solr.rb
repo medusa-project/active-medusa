@@ -10,7 +10,7 @@ module ActiveMedusa
     ##
     # Returns the shared Solr client.
     #
-    # @return [RSolr]
+    # @return [RSolr::Client]
     #
     def self.client
       @@client = RSolr.connect(
