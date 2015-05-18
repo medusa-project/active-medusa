@@ -4,9 +4,21 @@ module ActiveMedusa
 
     class Term
 
+      # @!attribute count
+      #   @return [Integer]
       attr_accessor :count
+
+      # @!attribute facet
+      #   @return [ActiveMedusa::Facet] The facet with which the term is
+      #           associated.
       attr_accessor :facet
+
+      # @!attribute label
+      #   @return [String]
       attr_accessor :label
+
+      # @!attribute name
+      #   @return [String]
       attr_accessor :name
 
       def initialize

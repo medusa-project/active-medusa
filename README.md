@@ -1,25 +1,17 @@
 ActiveMedusa provides a simple ActiveRecord-like interface to a Fedora 4
-repository, using Solr for lookup and querying.
+repository, using Solr for lookup and querying. It relies on a strategy like
+[fcrepo-message-consumer](https://github.com/fcrepo4/fcrepo-message-consumer)
+or [fcrepo-camel](https://github.com/fcrepo4/fcrepo-camel) to synchronize Solr
+with your repository, and never writes to Solr itself.
 
 # Features
 
-* Customizable Fedora ontology. Create your own RDF predicates or use existing
+* Customizable RDF ontology. Create your own RDF predicates or use existing
   ones. (ActiveMedusa does require some custom predicates, but they are
   managed automatically and live in their own distinct namespace.)
 * Customizable Solr schema. The names and types of your fields are up to you.
 * No-configuration support for node hierarchy traversal.
 * Simple and lightweight.
-
-# Differences compared to ActiveFedora
-
-* ActiveMedusa does not populate Solr itself; instead, it delegates this job to
-  fcrepo-message-consumer or fcrepo-camel. This means that it never writes to
-  Solr and has nothing to do with keeping it updated.
-* Not as good at modeling complex RDF ontologies.
-* No association with Hydra.
-* Simpler, easier to understand, approximately an order of magnitude simpler.
-  (Then again, it also does an order of magnitude less.)
-* No support for Fedora 3.
 
 ## Installation
 
@@ -51,6 +43,8 @@ ActiveMedusa needs to know some stuff about your setup. Tell it like this:
       config.namespace_uri = 'http://example.org/'
       config.solr_url = 'http://localhost:8983/solr'
       config.solr_core = 'collection1'
+      config.solr_id_field = :id
+      config.solr_parent_id_field = :parent_id
       config.solr_class_field = :class # used by ActiveMedusa finder methods
       config.solr_uuid_field = :uuid
       config.solr_default_search_field = :searchall
@@ -58,37 +52,61 @@ ActiveMedusa needs to know some stuff about your setup. Tell it like this:
                                   :date_facet, :format_facet, :language_facet]
     end
 
-If you are using Rails, you would put this in
-`config/initializers/active_medusa.rb`, and then restart your server.
+(If you are using Rails, you would put this in
+`config/initializers/active_medusa.rb`, and then restart your application.)
 
 ## Defining Entities
 
 Let's declare some entity ("model") classes. `Collection` and `Item` will
 correspond to Fedora 4 container nodes, and `Bytestream` will correspond to
 Fedora binary nodes. These are all common entities found in many repositories,
-but you could just as easily use `Series` instead of `Collection`, `Book`
-instead of `Item`, etc.
+but you could easily change the terminology to `Series` instead of `Collection`,
+for example.
 
     # collection.rb
-    class Collection < ActiveMedusa::Relation
-      has_many :items
-      # TODO: rdf_property
+    class Collection < ActiveMedusa::Base
+      has_many :items, predicate: 'http://example.org/contains'
+      rdf_property :title,
+                   xs_type: :string,
+                   predicate: 'http://purl.org/dc/elements/1.1/title',
+                   solr_field: 'title_s'
     end
 
     # item.rb
-    class Item < ActiveMedusa::Relation
-      has_many :bytestreams
-      belongs_to :collection
-      # TODO: rdf_property
+    class Item < ActiveMedusa::Base
+      has_many :bytestreams, predicate: 'http://example.org/hasBytestream'
+      has_many :items, predicate: 'http://example.org/hasChild'
+      belongs_to :collection, solr_field: 'collection_s'
+      belongs_to :item, solr_field: 'parent_s', name: 'parent'
+      rdf_property :full_text,
+                   xs_type: :string,
+                   predicate: 'http://example.org/fullText',
+                   solr_field: 'full_text_txt'
     end
     
     # bytestream.rb
-    class Bytestream < ActiveMedusa::Relation
-      belongs_to :item
-      # TODO: rdf_property
+    class Bytestream < ActiveMedusa::Base
+      belongs_to :item, predicate: 'http://example.org/isOwnedBy'
     end
 
-TODO: go over has_many, belongs_to, and rdf_property
+### Defining Properties
+
+`rdf_property` is a convenience method that maps entity properties to an
+instance's RDF graph and creates accessor and finder methods for them. You do
+not need to define all, or any, of an entity's properties with it. If you
+prefer, you can manually mutate an instance's `RDF::Graph` instance,
+accessible via `rdf_graph`. But it is useful to define at least the properties
+that you want to be searchable, because they will receive `find_by_x` methods
+(see "Loading Entities" later on).
+
+### Defining Relationships
+
+Using the `has_many` and `belongs_to` methods, the example above specifies
+that collections can contain zero or more items; items can contain zero or more
+bytestreams; and items can also contain zero or more items (as in aggregations,
+a.k.a. compound objects). Note that both sides of the relationship must be
+specified, so for every `has_many` on an owning entity, there must be a
+`belongs_to` on the owned entity.
 
 ## Creating Entities
 
@@ -114,14 +132,15 @@ if anything goes wrong.
 
 ### Requesting a Slug
 
-You can request that your new entity be given a particular slug before you save
-it:
+You can request that your new entity be given a particular slug in the
+repository before you save it:
 
     item = Item.new
-    item.requested_slug = 'cats'
+    item.requested_slug = 'kumquats'
     item.save!
     
-There is no guarantee, however, that the entity will actually get this slug.
+There is no guarantee, however, that the entity will actually receive this slug,
+and even if it doesn't, the save will succeed.
 
 ## Updating Entities
 
@@ -139,16 +158,12 @@ To load an item by some property, you can use one of the finder methods, like
 
     item = Item.find('some UUID')
 
-This method will raise an error if nothing is found, and if multiple entities
-are found, it will return only one.
+If multiple entities are found, it will return only one. This is the only
+finder method that will raise an error if nothing is found.
 
-Additionally, you can find by repository URI:
+Alternatively, you can find by repository URI:
 
-    item = Item.find_by_uri('F4 node URI')
-
-Or by web ID:
-
-    item = Item.find_by_web_id('t3s8w')
+    item = Item.find_by_uri('http://localhost:8080/fcrepo/rest/kumquats')
 
 Then, there are the `find_by_x` methods, where `x` corresponds to some
 property name:

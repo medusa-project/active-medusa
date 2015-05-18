@@ -313,7 +313,7 @@ module ActiveMedusa
     private
 
     ##
-    # Called by `Relation` via `send()`, but private for the purposes of users.
+    # Called by `Relation` via `send()`.
     #
     # @param loaded [Boolean]
     #
