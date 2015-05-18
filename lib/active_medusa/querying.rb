@@ -57,7 +57,8 @@ module ActiveMedusa
     end
 
     def respond_to_missing?(method_name, include_private = false)
-      [:first, :limit, :order, :start, :where].include?(method_name.to_sym)
+      [:count, :first, :limit, :order, :start, :where].
+          include?(method_name.to_sym)
     end
 
   end
