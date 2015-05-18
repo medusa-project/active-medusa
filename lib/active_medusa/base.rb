@@ -24,9 +24,9 @@ module ActiveMedusa
     define_model_callbacks :create, :delete, :load, :save, :update,
                            only: [:after, :before]
 
-    @@custom_properties = Set.new
     @@belongs_to = Set.new
     @@has_many = Set.new
+    @@rdf_properties = Set.new
 
     # @!attribute container_url
     #   @return [String] The URL of the entity's parent container.
@@ -121,11 +121,11 @@ module ActiveMedusa
     #        `:string`, `:integer`, `:boolean`, `:anyURI`; `:solr_field`
     #
     def self.rdf_property(name, options)
-      @@custom_properties << { class: self,
-                               name: name,
-                               uri: options[:predicate],
-                               type: options[:xs_type],
-                               solr_field: options[:solr_field] }
+      @@rdf_properties << { class: self,
+                            name: name,
+                            uri: options[:predicate],
+                            type: options[:xs_type],
+                            solr_field: options[:solr_field] }
     end
 
     ##
@@ -156,7 +156,7 @@ module ActiveMedusa
     #
     def initialize(params = {})
       # create accessors for subclass rdf_property statements
-      @@custom_properties.each do |prop|
+      @@rdf_properties.each do |prop|
         self.class.instance_eval { attr_accessor prop[:name] }
       end
       @destroyed = false
@@ -338,7 +338,7 @@ module ActiveMedusa
       end
       # add properties from subclass property definitions (see
       # `rdf_property`)
-      @@custom_properties.select{ |p| p[:class] == self.class }.each do |prop|
+      @@rdf_properties.select{ |p| p[:class] == self.class }.each do |prop|
         graph.each_triple do |subject, predicate, object|
           if predicate.to_s == prop[:predicate]
             if prop[:xs_type] == :boolean
@@ -406,7 +406,7 @@ module ActiveMedusa
         next if Fedora::MANAGED_PREDICATES.
             select{ |p| statement.predicate.to_s.start_with?(p) }.any?
         # exclude subclass-managed predicates from the update
-        next if @@custom_properties.select{ |p| p[:class] == self.class }.
+        next if @@rdf_properties.select{ |p| p[:class] == self.class }.
             map{ |p| p[:predicate] }.include?(statement.predicate.to_s)
 
         update.delete('<>', "<#{statement.predicate.to_s}>", '?o', false).
@@ -415,7 +415,7 @@ module ActiveMedusa
       end
 
       # add properties from subclass property definitions (see self.property())
-      @@custom_properties.select{ |p| p[:class] == self.class }.each do |prop|
+      @@rdf_properties.select{ |p| p[:class] == self.class }.each do |prop|
         update.delete('<>', "<#{prop[:predicate]}>", '?o', false)
         value = send(prop[:name])
         case prop[:xs_type]
