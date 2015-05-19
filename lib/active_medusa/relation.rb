@@ -13,7 +13,14 @@ module ActiveMedusa
 
     include Transactions
 
+    # @!attribute solr_request
+    #   @return [TODO:]
     attr_reader :solr_request
+
+    # @!attribute solr_response
+    #   @return [TODO:]
+    attr_reader :solr_response
+
     attr_accessor :transaction_url
 
     ##
@@ -184,6 +191,7 @@ module ActiveMedusa
         solr_response = Solr.client.get(
             @more_like_this ? 'mlt' : 'select', params: params)
         @solr_request = solr_response.request
+        @solr_response = solr_response.response
         @results.facet_fields = solr_facet_fields_to_objects(
             solr_response['facet_counts']['facet_fields']) if @facet
         @results.total_length = solr_response['response']['numFound'].to_i
