@@ -180,46 +180,42 @@ module ActiveMedusa
           params['facet.field'] = Configuration.instance.solr_facet_fields
           params[:fq] = @facet_queries
         end
-        begin
-          solr_response = Solr.client.get(
-              @more_like_this ? 'mlt' : 'select', params: params)
-          @solr_request = solr_response.request
-          @results.facet_fields = solr_facet_fields_to_objects(
-              solr_response['facet_counts']['facet_fields']) if @facet
-          @results.total_length = solr_response['response']['numFound'].to_i
-          solr_response['response']['docs'].each do |doc|
-            begin
-              entity = @caller.new(solr_representation: doc,
-                                   repository_url: doc['id'])
-              entity.score = doc['score']
-              url = doc['id']
-              url = transactional_url(url) if self.transaction_url.present?
-              f4_response = Fedora.client.get(
-                  url, nil, { 'Accept' => 'application/n-triples' })
-              graph = RDF::Graph.new
-              graph.from_ntriples(f4_response.body)
-              entity.populate_from_graph(graph)
-              entity.send(:loaded, true)
-              @results << entity
-            rescue HTTPClient::BadResponseError => e
-              # This probably means that the item was deleted from the
-              # repository and the delete did not propagate to Solr for some
-              # reason. There is nothing we can do, so swallow it and log it
-              # to avoid disrupting the user experience.
-              Configuration.instance.logger.
-                  error("Item present in Solr result is missing from "\
-                  "repository: #{e.message}")
-              @results.total_length -= 1
-            rescue HTTPClient::KeepAliveDisconnected => e
-              raise 'Unable to connect to Fedora. Check that it is running '\
-              'and that its URL is set correctly.'
-            end
+
+        solr_response = Solr.client.get(
+            @more_like_this ? 'mlt' : 'select', params: params)
+        @solr_request = solr_response.request
+        @results.facet_fields = solr_facet_fields_to_objects(
+            solr_response['facet_counts']['facet_fields']) if @facet
+        @results.total_length = solr_response['response']['numFound'].to_i
+        solr_response['response']['docs'].each do |doc|
+          begin
+            entity = @caller.new(solr_representation: doc,
+                                 repository_url: doc['id'])
+            entity.score = doc['score']
+            url = doc['id']
+            url = transactional_url(url) if self.transaction_url.present?
+            f4_response = Fedora.client.get(
+                url, nil, { 'Accept' => 'application/n-triples' })
+            graph = RDF::Graph.new
+            graph.from_ntriples(f4_response.body)
+            entity.populate_from_graph(graph)
+            entity.send(:loaded, true)
+            @results << entity
+          rescue HTTPClient::BadResponseError => e
+            # This probably means that the item was deleted from the
+            # repository and the delete did not propagate to Solr for some
+            # reason. There is nothing we can do, so swallow it and log it
+            # to avoid disrupting the user experience.
+            Configuration.instance.logger.
+                error("Item present in Solr result is missing from "\
+                "repository: #{e.message}")
+            @results.total_length -= 1
+          rescue HTTPClient::KeepAliveDisconnected => e
+            raise 'Unable to connect to Fedora. Check that it is running '\
+            'and that its URL is set correctly.'
           end
-          @loaded = true
-        rescue Errno::ECONNREFUSED => e
-          raise 'Unable to connect to Solr. Check that it is running and '\
-          'that its URL is set correctly.'
         end
+        @loaded = true
       end
     end
 
