@@ -24,7 +24,7 @@ module ActiveMedusa
     define_model_callbacks :create, :delete, :load, :save, :update,
                            only: [:after, :before]
 
-    @@entity_class = nil
+    @@entity_uri = nil
     @@belongs_to = Set.new
     @@has_many = Set.new
     @@rdf_properties = Set.new
@@ -99,10 +99,15 @@ module ActiveMedusa
     end
 
     ##
-    # @param name [String]
+    # @param name [String] A unique name for the class. This will be used as
+    # the value of `ActiveMedusa::Configuration.instance.solr_class_field` in
+    # Solr.
     #
-    def self.entity_class(name)
-      @@entity_class = name
+    def self.entity_uri(name = nil)
+      if name
+        @@entity_uri = name
+      end
+      @@entity_uri
     end
 
     ##
@@ -399,8 +404,6 @@ module ActiveMedusa
     #
     def to_sparql_update
       update = SPARQLUpdate.new
-      update.prefix(Configuration.instance.namespace_prefix,
-                    Configuration.instance.namespace_uri)
       update.prefix('indexing', 'http://fedora.info/definitions/v4/indexing#').
           delete('<>', '<indexing:hasIndexingTransformation>', '?o', false).
           insert(nil, 'indexing:hasIndexingTransformation',
@@ -408,6 +411,9 @@ module ActiveMedusa
       update.prefix('rdf', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#').
           delete('<>', '<rdf:type>', 'indexing:Indexable', false).
           insert(nil, 'rdf:type', 'indexing:Indexable', false)
+      update.delete('<>', "<#{Configuration.instance.class_predicate}>", '?o', false).
+          insert(nil, "<#{Configuration.instance.class_predicate}>",
+                 "<#{self.class.entity_uri}>", false) # TODO: conditionally escape depending on whether it's a URI
 
       self.rdf_graph.each_statement do |statement|
         # exclude repository-managed predicates from the update
