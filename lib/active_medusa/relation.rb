@@ -169,8 +169,9 @@ module ActiveMedusa
         return @results
       end
       unless @loaded
+        caller = @caller.kind_of?(Class) ? @caller : @caller.class
         @where_clauses << "#{Configuration.instance.solr_class_field}:\""\
-        "#{Configuration.instance.namespace_uri}#{@caller.class.entity_class}\""
+        "#{caller.entity_uri}\""
         params = {
             q: @where_clauses.join(' AND '),
             df: Configuration.instance.solr_default_search_field,
