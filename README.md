@@ -61,7 +61,7 @@ Let's declare some entity ("model") classes. `Collection` and `Item` will
 correspond to Fedora 4 container nodes, and `Bytestream` will correspond to
 Fedora binary nodes. These are all common entities found in many repositories,
 but you could easily change the terminology to `Series` instead of `Collection`,
-for example.
+and so on.
 
     # collection.rb
     class Collection < ActiveMedusa::Base
@@ -244,7 +244,7 @@ simply not try to do it.*
 
     items = Item.all.where(some_property: 'cats').
         where('arbitrary Solr query').
-        order('some_solr_field' => 'asc').start(21).limit(20)
+        order('some_solr_field' => :asc).start(21).limit(20)
 
 Items are loaded when `to_a` is called, explicitly or implicitly. So:
 
@@ -253,6 +253,18 @@ Items are loaded when `to_a` is called, explicitly or implicitly. So:
       # loaded one-by-one from Fedora with each iteration of the loop.
       # TODO: is the above true or are they loaded all at once?
     end
+
+### Ordering
+
+By default, results are sorted by relevance. To override this, use `order`
+to sort by any sortable Solr field:
+
+    Item.all.order('some_solr_field' => :asc)
+    Item.all.order('some_solr_field') # same effect as above
+    Item.all.order('some_solr_field' => :desc)
+    Item.all.order('some_solr_field desc')
+
+If no sort order is provided (via `order`), results will be sorted by relevance.
 
 ### Counts
 
@@ -275,8 +287,8 @@ To access returned facets, you might do something like:
       # A Facet may have one or more ActiveMedusa::Facet::Term objects.
       facet.terms.each do |term|
         puts term.count
-        puts term.label # TODO: ??
-        puts term.name # TODO: ??
+        puts term.label
+        puts term.name
       end
     end
 
