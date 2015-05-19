@@ -172,12 +172,27 @@ module ActiveMedusa
       @@rdf_properties.each do |prop|
         self.class.instance_eval { attr_accessor prop[:name] }
       end
+      @children = Set.new
       @destroyed = false
       @persisted = false
       @rdf_graph = RDF::Graph.new
       params.except(:id, :uuid).each do |k, v|
         send("#{k}=", v) if respond_to?("#{k}=")
       end
+    end
+
+    ##
+    # @return [Set]
+    #
+    def children
+      unless @children.any?
+        self.rdf_graph.each_statement do |st|
+          if st.predicate.to_s == 'http://www.w3.org/ns/ldp#contains'
+            @children << self.class.new(container_url: st.object.to_s)
+          end
+        end
+      end
+      @children
     end
 
     ##
@@ -238,6 +253,22 @@ module ActiveMedusa
     #
     def more_like_this
       ActiveMedusa::Relation.new(self.class).more_like_this
+    end
+
+    def parent
+      unless @parent
+        self.rdf_graph.each_statement do |st|
+          if st.predicate.to_s ==
+              'http://fedora.info/definitions/v4/repository#hasParent'
+            # TODO: self.class is wrong; should be the type of the node based
+            # on its Config.instance.class_predicate
+            #@parent = self.class.new(container_url: st.object.to_s)
+            @parent = self.class.find_by_uri(st.object.to_s)
+            break
+          end
+        end
+      end
+      @parent
     end
 
     ##
