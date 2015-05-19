@@ -189,17 +189,17 @@ module ActiveMedusa
           params[:fq] = @facet_queries
         end
 
-        solr_response = Solr.client.get(
-            @more_like_this ? 'mlt' : 'select', params: params)
-        @solr_request = solr_response.request
-        @solr_response = solr_response.response
+        solr_result = Solr.client.get(@more_like_this ? 'mlt' : 'select',
+                                      params: params)
+        @solr_request = solr_result.request
+        @solr_response = solr_result.response
         @results.facet_fields = solr_facet_fields_to_objects(
-            solr_response['facet_counts']['facet_fields']) if @facet
-        @results.total_length = solr_response['response']['numFound'].to_i
-        solr_response['response']['docs'].each do |doc|
+            solr_result['facet_counts']['facet_fields']) if @facet
+        @results.total_length = solr_result['response']['numFound'].to_i
+        solr_result['response']['docs'].each do |doc|
           begin
-            entity = @caller.new(solr_representation: doc,
-                                 repository_url: doc['id'])
+            entity = caller.new(solr_representation: doc,
+                                repository_url: doc['id'])
             entity.score = doc['score']
             url = doc['id']
             url = transactional_url(url) if self.transaction_url.present?

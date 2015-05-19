@@ -9,9 +9,11 @@ with your repository, and never writes to Solr itself.
 * Customizable RDF ontology. Create your own RDF predicates or use existing
   ones. (ActiveMedusa does require some custom predicates, but they are
   managed automatically and live in their own distinct namespace.)
-* Customizable Solr schema. The names and types of your fields are up to you.
+* Customizable Solr schema. Although some extra fields are required, their
+  names are up to you.
+* Supports both binary and container nodes.
 * No-configuration support for node hierarchy traversal.
-* Simple and lightweight.
+* Relatively simple and lightweight.
 
 ## Installation
 
@@ -37,10 +39,8 @@ ActiveMedusa needs to know some stuff about your setup. Tell it like this:
 
     ActiveMedusa::Configuration.new do |config|
       config.fedora_url = 'http://localhost:8080/fcrepo/rest'
-      
       config.logger = Rails.logger
-      config.namespace_prefix = 'example'
-      config.namespace_uri = 'http://example.org/'
+      config.class_predicate = 'http://example.org/hasClass'
       config.solr_url = 'http://localhost:8983/solr'
       config.solr_core = 'collection1'
       config.solr_id_field = :id
@@ -280,11 +280,11 @@ To access returned facets, you might do something like:
       end
     end
 
-### Scoring
+### Relevance
 
-If no sort order is provided (via `order`), results will be sorted by score.
-A result score can be accessed from the `score` property of any retrieved
-entity.
+If no sort order is provided (via `order`), results will be sorted by relevance.
+A relevance score can be accessed via the transient `score` property of any
+retrieved entity.
 
 ### "More Like This"
 

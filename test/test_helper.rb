@@ -8,8 +8,7 @@ MiniTest::Reporters.use!
 ActiveMedusa::Configuration.new do |config|
   config.fedora_url = 'http://localhost:8080/fedora/rest'
   config.fedora_indexing_transformation = 'activemedusa'
-  config.namespace_prefix = 'example'
-  config.namespace_uri = 'http://example.org/'
+  config.class_predicate = 'http://example.org/hasClass'
   config.solr_url = 'http://localhost:8983/solr'
   config.solr_core = 'activemedusa'
   config.solr_class_field = :class_s

@@ -7,15 +7,13 @@ module ActiveMedusa
 
     include Enumerable
 
-    ##
-    # Populated by `Relation.load`.
-    #
+    # @!attribute facet_fields
+    #   @return [Array] Array of `ActiveMedusa::Facet::Field`s, populated by
+    #           `Relation.load`.
     attr_accessor :facet_fields
 
-    ##
-    # The total length of the result set, if paged; otherwise the same as
-    # `length`.
-    #
+    # @!attribute total_length
+    #   @return [Integer]
     attr_accessor :total_length
 
     def initialize
