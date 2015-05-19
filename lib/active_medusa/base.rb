@@ -24,6 +24,7 @@ module ActiveMedusa
     define_model_callbacks :create, :delete, :load, :save, :update,
                            only: [:after, :before]
 
+    @@entity_class = nil
     @@belongs_to = Set.new
     @@has_many = Set.new
     @@rdf_properties = Set.new
@@ -95,6 +96,13 @@ module ActiveMedusa
       item = Item.new(params)
       item.save!
       item
+    end
+
+    ##
+    # @param name [String]
+    #
+    def self.entity_class(name)
+      @@entity_class = name
     end
 
     ##

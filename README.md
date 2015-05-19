@@ -65,6 +65,7 @@ for example.
 
     # collection.rb
     class Collection < ActiveMedusa::Base
+      entity_class 'http://example.org/Collection'
       has_many :items, predicate: 'http://example.org/contains'
       rdf_property :title,
                    xs_type: :string,
@@ -74,6 +75,7 @@ for example.
 
     # item.rb
     class Item < ActiveMedusa::Base
+      entity_class 'http://example.org/Item'
       has_many :bytestreams, predicate: 'http://example.org/hasBytestream'
       has_many :items, predicate: 'http://example.org/hasChild'
       belongs_to :collection, solr_field: 'collection_s'
@@ -86,8 +88,14 @@ for example.
     
     # bytestream.rb
     class Bytestream < ActiveMedusa::Base
+      entity_class 'http://example.org/Bytestream'
       belongs_to :item, predicate: 'http://example.org/isOwnedBy'
     end
+
+### Defining Types
+
+Every entity needs to have a type, which will be stored in Solr. Type is
+specified with the `entity_class` method.
 
 ### Defining Properties
 
