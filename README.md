@@ -350,6 +350,16 @@ run `bundle exec rake release` to create a git tag for the version, push git
 commits and tags, and push the `.gem` file to
 [rubygems.org](https://rubygems.org).
 
+## Debugging
+
+`ActiveMedusa::Relation` has `solr_request` and `solr_response` methods that
+can help in tracking down issues with Solr. Use it like this:
+
+    items = Item.all
+    items.to_a # executes a Solr request
+    puts items.solr_request
+    puts items.solr_response
+
 # Contributing
 
 1. Fork it (https://github.com/[my-github-username]/active-medusa/fork)
