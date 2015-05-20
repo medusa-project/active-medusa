@@ -15,10 +15,10 @@ module ActiveMedusa
   #
   class Base
 
-    extend Querying
     extend ActiveModel::Callbacks
     include ActiveModel::Model
     include GlobalID::Identification
+    include Querying
     include Transactions
 
     define_model_callbacks :create, :delete, :load, :save, :update,
