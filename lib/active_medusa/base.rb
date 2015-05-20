@@ -13,7 +13,7 @@ module ActiveMedusa
   ##
   # Abstract class from which all ActiveMedusa entities should inherit.
   #
-  class Base
+  class Base # TODO: rename to Container or create Container/Binary subclasses
 
     extend ActiveModel::Callbacks
     include ActiveModel::Model
@@ -25,8 +25,8 @@ module ActiveMedusa
                            only: [:after, :before]
 
     @@entity_uri = nil
-    @@belongs_to = Set.new
-    @@has_many = Set.new
+    @@belongs_to_defs = Set.new
+    @@has_many_defs = Set.new
     @@rdf_properties = Set.new
 
     # @!attribute container_url
@@ -70,11 +70,38 @@ module ActiveMedusa
 
     ##
     # @param entity [Symbol] `ActiveMedusa::Base` subclass name
-    # @param predicate [String] RDF predicate
+    # @param options [Hash] Hash with the following required keys:
+    #                `:predicate`, `:solr_field`; and the following optional
+    #                keys: `:name` (specifies the name of the accessor method)
     #
-    def self.belongs_to(entity, predicate)
+    def self.belongs_to(entity, options)
+      if options[:name] == 'parent'
+        raise 'Cannot define a `belongs_to` relationship named `parent`.'
+      end
+
+      entity = entity.to_s.downcase
       self.class.instance_eval do
-        @@belongs_to << { entity: entity, predicate: predicate }
+        @@belongs_to_defs << options.merge(entity: entity)
+      end
+
+      # Define a lazy getter method to access the target of the relationship
+      define_method(options[:name] || entity) do
+        owner = @belongs_to[entity.to_sym]
+        unless owner
+          property = @@belongs_to_defs.select{ |p| p[:entity] == entity }.first
+          solr_rel_field = property[:solr_field]
+          predicate = property[:predicate]
+          config = ActiveMedusa::Configuration.instance
+          owner = self.class.where(solr_rel_field => self.container_url).
+              where(config.solr_class_field => predicate).to_a.first
+          @belongs_to[entity.to_sym] = owner
+        end
+        owner
+      end
+
+      # Define a setter method to access the target of the relationship
+      define_method("#{options[:name] || entity}=") do |value|
+        @belongs_to[entity.to_sym] = value
       end
     end
 
@@ -97,7 +124,7 @@ module ActiveMedusa
       item.save!
       item
     end
-
+=begin
     ##
     # @param name [String] A unique name for the class. This will be used as
     # the value of `ActiveMedusa::Configuration.instance.solr_class_field` in
@@ -109,15 +136,39 @@ module ActiveMedusa
       end
       @@entity_uri
     end
+=end
+    class << self
+      def entity_uri(name = nil)
+        @entity_uri = name if name
+        @entity_uri
+      end
+    end
 
     ##
     # @param entity [Symbol] Pluralized `ActiveMedusa::Base` subclass name
-    # @param predicate [String] RDF predicate
+    # @param options [Hash] Hash with the following options: `:predicate`
     #
-    def self.has_many(entities, predicate)
+    def self.has_many(entities, options)
+      if options[:entities] == 'children'
+        raise 'Cannot define a `has_many` relationship named `children`.'
+      end
+
+      entity = entities.to_s.singularize
       self.class.instance_eval do
-        @@has_many << { entity: entities.to_s.pluralize(1),
-                        predicate: predicate }
+        @@has_many_defs << options.merge(entity: entity)
+      end
+
+      define_method(entities) do
+        owned = @has_many[entities.to_sym]
+        unless owned
+          entity_class = Object.const_get(entity.capitalize)
+          solr_rel_field = entity_class.get_belongs_to_defs.
+              select{ |p| p[:entity] == self.class.to_s.downcase }.
+              first[:solr_field]
+          owned = entity_class.where(solr_rel_field => self.repository_url)
+          @has_many[entities.to_sym] = owned
+        end
+        owned
       end
     end
 
@@ -139,6 +190,7 @@ module ActiveMedusa
                             predicate: options[:predicate],
                             type: options[:xs_type],
                             solr_field: options[:solr_field] }
+      instance_eval { attr_accessor name }
     end
 
     ##
@@ -169,10 +221,12 @@ module ActiveMedusa
     #
     def initialize(params = {})
       # create accessors for subclass rdf_property statements
-      @@rdf_properties.each do |prop|
-        self.class.instance_eval { attr_accessor prop[:name] }
-      end
-      @children = Set.new
+      #@@rdf_properties.each do |prop|
+      #  self.class.instance_eval { attr_accessor prop[:name] }
+      #end
+      @belongs_to = {} # entity name => ActiveMedusa::Relation
+      @has_many = {} # entity name => ActiveMedusa::Relation
+      @children = Set.new # TODO: make this an ActiveMedusa::Relation somehow (considering that it may contain varying types)
       @destroyed = false
       @persisted = false
       @rdf_graph = RDF::Graph.new
@@ -182,13 +236,15 @@ module ActiveMedusa
     end
 
     ##
-    # @return [Set]
+    # @return [Set] Set of all LDP children *of the same type*. TODO: fix that
     #
     def children
       unless @children.any?
         self.rdf_graph.each_statement do |st|
           if st.predicate.to_s == 'http://www.w3.org/ns/ldp#contains'
-            @children << self.class.find_by_uri(st.object.to_s)
+            # TODO: make this more efficient
+            child = self.class.find_by_uri(st.object.to_s)
+            @children << child if child
           end
         end
       end
@@ -249,12 +305,31 @@ module ActiveMedusa
     end
 
     ##
+    # Handles `find_by_x` calls.
+    #
+    def method_missing(name, *args, &block)
+      name_s = name.to_s
+      if self.respond_to?(name)
+        prop = @@rdf_properties.select{ |p| p[:name] == name_s }.first
+        if prop
+          return self.where(prop[:solr_field] => args[0]).
+              use_transaction_url(args[1]).first
+        end
+      end
+      super
+    end
+
+    ##
     # @return [ActiveMedusa::Relation]
     #
     def more_like_this
-      ActiveMedusa::Relation.new(self.class).more_like_this
+      ActiveMedusa::Relation.new(self).more_like_this
     end
 
+    ##
+    # @return [ActiveMedusa::Base] `ActiveMedusa::Base` subclass. Will return
+    # nil if the parent is not the same type. TODO: fix that
+    #
     def parent
       unless @parent
         self.rdf_graph.each_statement do |st|
@@ -287,6 +362,18 @@ module ActiveMedusa
         graph.from_ntriples(response.body)
         populate_from_graph(graph)
       end
+    end
+
+    ##
+    # Overridden to handle `find_by_x` calls.
+    #
+    def respond_to?(sym, include_private = false)
+      sym_s = sym.to_s
+      if sym_s.start_with?('find_by_') and @@rdf_properties.
+            select{ |p| p[:class] == self.class and p[:name].to_s == sym_s }.any?
+        return true
+      end
+      super
     end
 
     ##
@@ -356,6 +443,10 @@ module ActiveMedusa
 
     private
 
+    def self.get_belongs_to_defs
+      @@belongs_to_defs
+    end
+
     ##
     # Called by `Relation` via `send()`.
     #
@@ -380,7 +471,8 @@ module ActiveMedusa
         end
         self.rdf_graph << statement
       end
-      # add properties from subclass property definitions (see
+
+      # add properties from subclass rdf_property definitions (see
       # `rdf_property`)
       @@rdf_properties.select{ |p| p[:class] == self.class }.each do |prop|
         graph.each_triple do |subject, predicate, object|
@@ -395,6 +487,17 @@ module ActiveMedusa
           end
         end
       end
+
+      # add properties from subclass belongs_to relationships
+      @@belongs_to_defs.each do |bt|
+        graph.each_triple do |subject, predicate, object|
+          if predicate.to_s == bt[:predicate]
+            owning_class = Object.const_get(bt[:entity].capitalize)
+            send("#{bt[:name] || bt[:entity]}=", owning_class.find_by_uri(object.to_s))
+          end
+        end
+      end
+
       @persisted = true
     end
 
@@ -473,6 +576,14 @@ module ActiveMedusa
           else
             update.insert(nil, "<#{prop[:predicate]}>", value) if value.present?
         end
+      end
+
+      # add properties from subclass belongs_to relationships
+      @belongs_to.each do |entity_name, entity|
+        predicate = @@belongs_to_defs.
+            select{ |d| d[:entity] == entity_name.to_s }.first[:predicate]
+        update.delete('<>', "<#{predicate}>", '?o', false)
+        update.insert(nil, "<#{predicate}>", "<#{entity.repository_url}>", false) if entity
       end
 
       update
