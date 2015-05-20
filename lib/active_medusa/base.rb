@@ -136,7 +136,7 @@ module ActiveMedusa
     def self.rdf_property(name, options)
       @@rdf_properties << { class: self,
                             name: name,
-                            uri: options[:predicate],
+                            predicate: options[:predicate],
                             type: options[:xs_type],
                             solr_field: options[:solr_field] }
     end
@@ -459,7 +459,7 @@ module ActiveMedusa
                    statement.object.to_s)
       end
 
-      # add properties from subclass property definitions (see self.property())
+      # add properties from subclass rdf_property definitions
       @@rdf_properties.select{ |p| p[:class] == self.class }.each do |prop|
         update.delete('<>', "<#{prop[:predicate]}>", '?o', false)
         value = send(prop[:name])
