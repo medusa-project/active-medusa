@@ -146,7 +146,7 @@ module ActiveMedusa
         # noop
       elsif where.kind_of?(Hash)
         @where_clauses += where.reject{ |k, v| v.blank? }.
-            map{ |k, v| "#{k}:#{v}" }
+            map{ |k, v| "#{k}:\"#{v}\"" }
       elsif where.respond_to?(:to_s)
         @where_clauses << where.to_s
       end
