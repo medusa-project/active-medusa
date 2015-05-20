@@ -361,7 +361,7 @@ module ActiveMedusa
     #
     # @param loaded [Boolean]
     #
-    def loaded=(loaded)
+    def loaded(loaded)
       run_callbacks :load do
         # noop
       end

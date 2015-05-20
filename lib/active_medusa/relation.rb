@@ -14,11 +14,11 @@ module ActiveMedusa
     include Transactions
 
     # @!attribute solr_request
-    #   @return [TODO:]
+    #   @return [Hash]
     attr_reader :solr_request
 
     # @!attribute solr_response
-    #   @return [TODO:]
+    #   @return [Hash]
     attr_reader :solr_response
 
     attr_accessor :transaction_url
@@ -28,7 +28,7 @@ module ActiveMedusa
     # initialize an "empty query", i.e. one that will return no results.
     #
     def initialize(caller = nil)
-      @caller = caller
+      @calling_class = caller.kind_of?(Class) ? caller : caller.class
       @facet = false
       @facet_queries = []
       @limit = nil
@@ -44,8 +44,8 @@ module ActiveMedusa
     # @return [Integer]
     #
     def count
-      @start = 0
-      @limit = 0
+      #@start = 0 TODO: do this?
+      #@limit = 0
       self.to_a.total_length
     end
 
@@ -60,7 +60,7 @@ module ActiveMedusa
         # noop
       elsif fq.respond_to?(:each)
         @facet_queries += fq.reject{ |v| v.blank? }
-      elsif fq.respond_to?('to_s')
+      elsif fq.respond_to?(:to_s)
         @facet_queries << fq.to_s
       end
       self
@@ -147,7 +147,7 @@ module ActiveMedusa
       elsif where.kind_of?(Hash)
         @where_clauses += where.reject{ |k, v| v.blank? }.
             map{ |k, v| "#{k}:#{v}" }
-      elsif where.respond_to?('to_s')
+      elsif where.respond_to?(:to_s)
         @where_clauses << where.to_s
       end
       self
@@ -164,14 +164,10 @@ module ActiveMedusa
     private
 
     def load
-      unless @caller
-        @loaded = true
-        return @results
-      end
-      unless @loaded
-        caller = @caller.kind_of?(Class) ? @caller : @caller.class
+      if @calling_class and !@loaded
+        # limit the query to the calling class
         @where_clauses << "#{Configuration.instance.solr_class_field}:\""\
-        "#{caller.entity_uri}\""
+        "#{@calling_class.entity_uri}\""
         params = {
             q: @where_clauses.join(' AND '),
             df: Configuration.instance.solr_default_search_field,
@@ -189,17 +185,17 @@ module ActiveMedusa
           params[:fq] = @facet_queries
         end
 
-        solr_result = Solr.client.get(@more_like_this ? 'mlt' : 'select',
+        solr_result = Solr.client.get(@more_like_this ? 'mlt' : 'select', # TODO: extract this to config
                                       params: params)
-        @solr_request = solr_result.request
-        @solr_response = solr_result.response
+        @solr_request = solr_result['request']
+        @solr_response = solr_result['response']
         @results.facet_fields = solr_facet_fields_to_objects(
             solr_result['facet_counts']['facet_fields']) if @facet
         @results.total_length = solr_result['response']['numFound'].to_i
         solr_result['response']['docs'].each do |doc|
           begin
-            entity = caller.new(solr_representation: doc,
-                                repository_url: doc['id'])
+            entity = @calling_class.new(solr_representation: doc,
+                                        repository_url: doc['id'])
             entity.score = doc['score']
             url = doc['id']
             url = transactional_url(url) if self.transaction_url.present?
@@ -207,7 +203,7 @@ module ActiveMedusa
                 url, nil, { 'Accept' => 'application/n-triples' })
             graph = RDF::Graph.new
             graph.from_ntriples(f4_response.body)
-            entity.populate_from_graph(graph)
+            entity.send(:populate_from_graph, graph)
             entity.send(:loaded, true)
             @results << entity
           rescue HTTPClient::BadResponseError => e
@@ -219,9 +215,6 @@ module ActiveMedusa
                 error("Item present in Solr result is missing from "\
                 "repository: #{e.message}")
             @results.total_length -= 1
-          rescue HTTPClient::KeepAliveDisconnected => e
-            raise 'Unable to connect to Fedora. Check that it is running '\
-            'and that its URL is set correctly.'
           end
         end
         @loaded = true
