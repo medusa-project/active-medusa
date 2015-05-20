@@ -188,7 +188,7 @@ module ActiveMedusa
       unless @children.any?
         self.rdf_graph.each_statement do |st|
           if st.predicate.to_s == 'http://www.w3.org/ns/ldp#contains'
-            @children << self.class.new(container_url: st.object.to_s)
+            @children << self.class.find_by_uri(st.object.to_s)
           end
         end
       end
