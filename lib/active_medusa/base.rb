@@ -185,9 +185,8 @@ module ActiveMedusa
 
     ##
     # @param also_tombstone [Boolean]
-    # @param commit_immediately [Boolean]
     #
-    def delete(also_tombstone = false, commit_immediately = true)
+    def delete(also_tombstone = false)
       if @persisted and !@destroyed
         url = transactional_url(self.repository_url)
         if url
@@ -198,14 +197,6 @@ module ActiveMedusa
             client.delete("#{url}/fcr:tombstone") if also_tombstone
             @destroyed = true
             @persisted = false
-
-            if commit_immediately
-              # wait for solr to get the delete
-              # TODO: this is horrible
-              # (also doing this in save())
-              sleep 2
-              Solr.client.commit
-            end
           end
         end
         return true
@@ -280,10 +271,9 @@ module ActiveMedusa
     # UUID (for existing entities) *or* it must have a parent container URL
     # (for new entities).
     #
-    # @param commit_immediately [Boolean]
     # @raise [RuntimeError]
     #
-    def save(commit_immediately = true) # TODO: look into Solr soft commits
+    def save
       raise 'Validation error' unless self.valid?
       raise 'Cannot save a destroyed object.' if self.destroyed?
       run_callbacks :save do
@@ -296,13 +286,6 @@ module ActiveMedusa
           'required.'
         end
         @persisted = true
-        if commit_immediately
-          # wait for solr to get the add
-          # TODO: this is horrible (also doing it in delete())
-          sleep 2
-          Solr.client.commit
-          self.reload!
-        end
       end
     end
 
