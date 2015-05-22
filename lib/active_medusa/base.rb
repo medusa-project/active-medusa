@@ -1,13 +1,13 @@
 require 'active_medusa/fedora'
 require 'active_medusa/querying'
 require 'active_medusa/solr'
-require 'active_medusa/sparql_update'
 require 'active_medusa/relationships'
 require 'active_medusa/transactions'
 require 'active_model'
 require 'active_support/inflector'
 require 'globalid'
 require 'rdf'
+require 'rdf/turtle'
 
 module ActiveMedusa
 
@@ -87,19 +87,7 @@ module ActiveMedusa
       item.save!
       item
     end
-=begin
-    ##
-    # @param name [String] A unique name for the class. This will be used as
-    # the value of `ActiveMedusa::Configuration.instance.solr_class_field` in
-    # Solr.
-    #
-    def self.entity_uri(name = nil)
-      if name
-        @@entity_uri = name
-      end
-      @@entity_uri
-    end
-=end
+
     class << self
       def entity_uri(name = nil)
         @entity_uri = name if name
@@ -155,16 +143,13 @@ module ActiveMedusa
     # @param params [Hash]
     #
     def initialize(params = {})
-      # create accessors for subclass rdf_property statements
-      #@@rdf_properties.each do |prop|
-      #  self.class.instance_eval { attr_accessor prop[:name] }
-      #end
       @belongs_to = {} # entity name => ActiveMedusa::Relation TODO: move to Relationships
       @has_many = {} # entity name => ActiveMedusa::Relation TODO: move to Relationships
       @children = Set.new # TODO: make this an ActiveMedusa::Relation somehow (considering that it may contain varying types) and move to Relationships
       @destroyed = false
+      @loaded = false
       @persisted = false
-      @rdf_graph = RDF::Graph.new
+      @rdf_graph = new_rdf_graph
       params.except(:id, :uuid).each do |k, v|
         send("#{k}=", v) if respond_to?("#{k}=")
       end
@@ -197,6 +182,8 @@ module ActiveMedusa
             client.delete("#{url}/fcr:tombstone") if also_tombstone
             @destroyed = true
             @persisted = false
+
+            # TODO: delete relationships
           end
         end
         return true
@@ -215,7 +202,7 @@ module ActiveMedusa
     end
 
     ##
-    # Handles `find_by_x` calls.
+    # Handles `find_by_x` calls. # TODO: move this to Querying
     #
     def method_missing(name, *args, &block)
       name_s = name.to_s
@@ -245,12 +232,7 @@ module ActiveMedusa
 
     def reload!
       if self.persisted?
-        url = transactional_url(self.repository_url)
-        response = Fedora.client.get(
-            url, nil, { 'Accept' => 'application/n-triples' })
-        graph = RDF::Graph.new
-        graph.from_ntriples(response.body)
-        populate_from_graph(graph)
+        populate_from_graph(fetch_current_graph)
       end
     end
 
@@ -325,15 +307,43 @@ module ActiveMedusa
 
     private
 
+    def fetch_current_graph
+      graph = RDF::Graph.new
+      url = transactional_url(self.repository_url)
+      if url
+        response = Fedora.client.get(
+            url, nil, { 'Accept' => 'application/n-triples' })
+        graph.from_ntriples(response.body)
+      end
+      graph
+    end
+
     ##
-    # Called by `Relation` via `send()`.
-    #
     # @param loaded [Boolean]
     #
-    def loaded(loaded)
+    def loaded=(loaded)
       run_callbacks :load do
-        # noop
+        @loaded = loaded
       end
+    end
+
+    ##
+    # @return [RDF::Graph]
+    #
+    def new_rdf_graph
+      graph = RDF::Graph.new
+      graph << RDF::Statement.new(
+          RDF::URI(),
+          RDF::URI('http://fedora.info/definitions/v4/indexing#hasIndexingTransformation'),
+          Configuration.instance.fedora_indexing_transformation)
+      graph << RDF::Statement.new(
+          RDF::URI(),
+          RDF::URI('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+          RDF::URI('http://fedora.info/definitions/v4/indexing#Indexable'))
+      graph << RDF::Statement.new(
+          RDF::URI(), RDF::URI(Configuration.instance.class_predicate),
+          RDF::URI(self.class.entity_uri))
+      graph
     end
 
     ##
@@ -342,129 +352,107 @@ module ActiveMedusa
     # @param graph [RDF::Graph]
     #
     def populate_from_graph(graph)
-      graph.each_statement do |statement|
-        if statement.predicate.to_s ==
-            'http://fedora.info/definitions/v4/repository#uuid'
-          self.uuid = statement.object.to_s
-        end
-        self.rdf_graph << statement
-      end
+      self.rdf_graph = graph
 
-      # add properties from subclass rdf_property definitions (see
-      # `rdf_property`)
+      self.uuid = graph.any_object('http://fedora.info/definitions/v4/repository#uuid').to_s
+
+      # set values of subclass `rdf_property` definitions
       @@rdf_properties.select{ |p| p[:class] == self.class }.each do |prop|
-        graph.each_triple do |subject, predicate, object|
-          if predicate.to_s == prop[:predicate]
-            if prop[:xs_type] == :boolean
-              value = ['true', '1'].include?(object.to_s)
-            else
-              value = object.to_s
-            end
-            send("#{prop[:name]}=", value)
-            break
-          end
+        value = graph.any_object(prop[:predicate])
+        if prop[:xs_type] == :boolean
+          value = ['true', '1'].include?(value.to_s)
+        else
+          value = value.to_s
         end
+        send("#{prop[:name]}=", value)
       end
 
       # add properties from subclass belongs_to relationships
       self.class.get_belongs_to_defs.each do |bt|
-        graph.each_triple do |subject, predicate, object|
-          if predicate.to_s == bt[:predicate]
-            owning_class = Object.const_get(bt[:entity].capitalize)
-            send("#{bt[:name] || bt[:entity]}=", owning_class.find_by_uri(object.to_s))
-          end
-        end
+        value = graph.any_object(bt[:predicate])
+        owning_class = Object.const_get(bt[:entity].capitalize)
+        #send("#{bt[:name] || bt[:entity]}=", owning_class.find_by_uri(value.to_s)) # TODO: INFINITE LOOP
       end
 
+      self.loaded = true
       @persisted = true
+
     end
 
     ##
-    # Updates an existing node.
+    # Populates an RDF::Graph for sending to Fedora.
     #
-    def save_existing
-      url = transactional_url(self.repository_url)
-      Fedora.client.patch(url, to_sparql_update.to_s,
-                          { 'Content-Type' => 'application/sparql-update' })
-    end
-
-    ##
-    # Creates a new node.
-    #
-    def save_new
-      run_callbacks :create do
-        url = transactional_url(self.container_url)
-        # As of version 4.1, Fedora doesn't like to accept triples via POST for
-        # some reason; it just returns 201 Created regardless of the
-        # Content-Type header and body content. I'm probably doing something
-        # wrong. So, instead, we will POST to create an empty container, and
-        # then update that.
-        headers = { 'Content-Type' => 'application/n-triples' }
-        headers['Slug'] = self.requested_slug if self.requested_slug
-        response = Fedora.client.post(url, nil, headers)
-        self.repository_url = nontransactional_url(response.header['Location'].first)
-        self.requested_slug = nil
-        save_existing
-      end
-    end
-
-    ##
-    # Generates a `SPARQLUpdate` to send the instance's current properties to
-    # the repository.
-    #
-    # @return [ActiveMedusa::SPARQLUpdate]
-    #
-    def to_sparql_update
-      update = SPARQLUpdate.new
-      update.prefix('indexing', 'http://fedora.info/definitions/v4/indexing#').
-          delete('<>', '<indexing:hasIndexingTransformation>', '?o', false).
-          insert(nil, 'indexing:hasIndexingTransformation',
-                 Configuration.instance.fedora_indexing_transformation)
-      update.prefix('rdf', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#').
-          delete('<>', '<rdf:type>', 'indexing:Indexable', false).
-          insert(nil, 'rdf:type', 'indexing:Indexable', false)
-      update.delete('<>', "<#{Configuration.instance.class_predicate}>", '?o', false).
-          insert(nil, "<#{Configuration.instance.class_predicate}>",
-                 "<#{self.class.entity_uri}>", false) # TODO: conditionally escape depending on whether it's a URI
-
-      self.rdf_graph.each_statement do |statement|
-        # exclude repository-managed predicates from the update
-        next if Fedora::MANAGED_PREDICATES.
-            select{ |p| statement.predicate.to_s.start_with?(p) }.any?
-        # exclude subclass-managed predicates from the update
-        next if @@rdf_properties.select{ |p| p[:class] == self.class }.
-            map{ |p| p[:predicate] }.include?(statement.predicate.to_s)
-
-        update.delete('<>', "<#{statement.predicate.to_s}>", '?o', false).
-            insert(nil, "<#{statement.predicate.to_s}>",
-                   statement.object.to_s)
-      end
-
+    # @param graph [RDF::Graph]
+    # @return [RDF::Graph] Input graph
+    def populate_graph(graph)
       # add properties from subclass rdf_property definitions
       @@rdf_properties.select{ |p| p[:class] == self.class }.each do |prop|
-        update.delete('<>', "<#{prop[:predicate]}>", '?o', false)
+        graph.delete([nil, RDF::URI(prop[:predicate]), nil])
         value = send(prop[:name])
-        case prop[:xs_type]
+        case prop[:type].to_sym
           when :boolean
-            value = ['true', '1'].include?(value.to_s) ? 'true' : 'false'
-            update.insert(nil, "<#{prop[:predicate]}>", value)
+            if value != nil
+              value = ['true', '1'].include?(value.to_s) ? 'true' : 'false'
+            end
           when :anyURI
-            update.insert(nil, "<#{prop[:predicate]}>", "<#{value}>", false) if
-                value.present?
+            value = RDF::URI(value)
           else
-            update.insert(nil, "<#{prop[:predicate]}>", value) if value.present?
+            value = value.to_s
         end
+        graph << RDF::Statement.new(
+            RDF::URI(), RDF::URI(prop[:predicate]), value) if value.present?
       end
 
       # add properties from subclass belongs_to relationships
       @belongs_to.each do |entity_name, entity|
         predicate = self.class.get_belongs_to_defs.
             select{ |d| d[:entity] == entity_name.to_s }.first[:predicate]
-        update.delete('<>', "<#{predicate}>", '?o', false)
-        update.insert(nil, "<#{predicate}>", "<#{entity.repository_url}>", false) if entity
+        graph.delete([nil, RDF::URI(predicate), nil])
+        graph << RDF::Statement.new(
+            RDF::URI(), RDF::URI(predicate), RDF::URI(entity.repository_url)) if entity
       end
+      graph
+    end
 
-      update
+    ##
+    # Updates an existing node.
+    #
+    # @raise [RuntimeError]
+    #
+    def save_existing
+      self.rdf_graph = populate_graph(fetch_current_graph)
+      url = transactional_url(self.repository_url)
+      body = self.rdf_graph.to_ttl
+      headers = { 'Content-Type' => 'text/turtle' }
+      # TODO: prefixes http://blog.datagraph.org/2010/04/parsing-rdf-with-ruby
+      begin
+        Fedora.client.put(url, body, headers)
+      rescue HTTPClient::BadResponseError => e
+        raise "#{e.res.status}: #{e.res.body}"
+      end
+    end
+
+    ##
+    # Creates a new node.
+    #
+    # @raise [RuntimeError]
+    #
+    def save_new
+      run_callbacks :create do
+        self.rdf_graph = populate_graph(fetch_current_graph)
+        url = transactional_url(self.container_url)
+        body = self.rdf_graph.to_ttl
+        headers = { 'Content-Type' => 'text/turtle' }
+        headers['Slug'] = self.requested_slug if self.requested_slug
+        # TODO: prefixes http://blog.datagraph.org/2010/04/parsing-rdf-with-ruby
+        begin
+          response = Fedora.client.post(url, body, headers)
+        rescue HTTPClient::BadResponseError => e
+          raise "#{e.res.status}: #{e.res.body}"
+        end
+        self.repository_url = nontransactional_url(response.header['Location'].first)
+        self.requested_slug = nil
+      end
     end
 
   end

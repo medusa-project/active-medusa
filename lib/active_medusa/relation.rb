@@ -204,7 +204,6 @@ module ActiveMedusa
             graph = RDF::Graph.new
             graph.from_ntriples(f4_response.body)
             entity.send(:populate_from_graph, graph)
-            entity.send(:loaded, true)
             @results << entity
           rescue HTTPClient::BadResponseError => e
             # This probably means that the item was deleted from the

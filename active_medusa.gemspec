@@ -31,6 +31,7 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency 'activesupport'
   spec.add_runtime_dependency 'globalid'
   spec.add_runtime_dependency 'rdf'
+  spec.add_runtime_dependency 'rdf-turtle'
   spec.add_runtime_dependency 'rsolr'
   spec.add_development_dependency "bundler", "~> 1.9"
   spec.add_development_dependency 'rdoc'
