@@ -73,9 +73,9 @@ module ActiveMedusa
     # @return [ActiveMedusa::Base]
     #
     def self.create(params = {})
-      item = Item.new(params)
-      item.save
-      item
+      instance = self.new(params)
+      instance.save
+      instance
     end
 
     ##
@@ -83,9 +83,9 @@ module ActiveMedusa
     # @return [ActiveMedusa::Base]
     #
     def self.create!(params = {})
-      item = Item.new(params)
-      item.save!
-      item
+      instance = self.new(params)
+      instance.save!
+      instance
     end
 
     class << self
