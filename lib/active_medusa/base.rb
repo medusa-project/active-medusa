@@ -381,16 +381,8 @@ module ActiveMedusa
         send("#{prop[:name]}=", value)
       end
 
-      # add properties from subclass belongs_to relationships
-      self.class.get_belongs_to_defs.each do |bt|
-        value = graph.any_object(bt[:predicate])
-        owning_class = Object.const_get(bt[:entity].capitalize)
-        #send("#{bt[:name] || bt[:entity]}=", owning_class.find_by_uri(value.to_s)) # TODO: INFINITE LOOP
-      end
-
       self.loaded = true
       @persisted = true
-
     end
 
     ##
