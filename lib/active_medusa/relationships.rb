@@ -32,12 +32,14 @@ module ActiveMedusa
           owner = @belongs_to[entity.to_sym]
           unless owner
             property = @@belongs_to_defs.select{ |p| p[:entity] == entity }.first
-            solr_rel_field = property[:solr_field]
-            predicate = property[:predicate]
-            config = ActiveMedusa::Configuration.instance
-            owner = self.class.where(solr_rel_field => self.container_url).
-                where(config.solr_class_field => predicate).to_a.first
-            @belongs_to[entity.to_sym] = owner
+            entity_class = Object.const_get(entity.capitalize)
+            self.rdf_graph.each_statement do |st|
+              if st.predicate.to_s == property[:predicate]
+                owner = entity_class.find_by_uri(st.object.to_s)
+                @belongs_to[entity.to_sym] = owner
+                break
+              end
+            end
           end
           owner
         end
