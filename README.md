@@ -47,9 +47,10 @@ Or install it yourself as:
 ActiveMedusa needs to know some stuff about your setup. Tell it like this:
 
     ActiveMedusa::Configuration.new do |config|
+      config.entity_path = File.join(Rails.root, 'app', 'models')
       config.fedora_url = 'http://localhost:8080/fcrepo/rest'
       config.logger = Rails.logger
-      config.class_predicate = 'http://example.org/hasClass'
+      config.class_predicate = 'http://www.w3.org/2000/01/rdf-schema#Class'
       config.solr_url = 'http://localhost:8983/solr'
       config.solr_core = 'collection1'
       config.solr_id_field = :id
@@ -199,6 +200,16 @@ property name:
 Once an entity has been loaded, it can be reloaded:
 
     item.reload!
+
+### Loading Entities of Unknown Type
+
+Suppose you have an entity URI or UUID, but you are unsure of the class of
+the entity it identifies -- you don't know whether it's an `Item` or a
+`Collection`, and therefore don't know which class `find` method to use. In
+that case, you can simply call `find` on `ActiveMedusa::Base` to return an
+instance of the correct class:
+
+    item_or_collection = ActiveMedusa::Base.find('...')
 
 ### Reading & Writing Metadata
 

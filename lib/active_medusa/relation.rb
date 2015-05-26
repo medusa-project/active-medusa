@@ -165,9 +165,13 @@ module ActiveMedusa
 
     def load
       if @calling_class and !@loaded
-        # limit the query to the calling class
-        @where_clauses << "#{Configuration.instance.solr_class_field}:\""\
-        "#{@calling_class.entity_class_uri}\""
+        # if @calling_class is ActiveMedusa::Base, we need to query across
+        # all entities.
+        if @calling_class != ActiveMedusa::Base
+          # limit the query to the calling class
+          @where_clauses << "#{Configuration.instance.solr_class_field}:\""\
+          "#{@calling_class.entity_class_uri}\""
+        end
         params = {
             q: @where_clauses.join(' AND '),
             df: Configuration.instance.solr_default_search_field,
@@ -194,17 +198,31 @@ module ActiveMedusa
         @results.total_length = solr_result['response']['numFound'].to_i
         solr_result['response']['docs'].each do |doc|
           begin
-            entity = @calling_class.new(solr_representation: doc,
+            if @calling_class == ActiveMedusa::Base
+              predicate = doc[Configuration.instance.solr_class_field.to_s]
+              instantiable = ActiveMedusa::Base.send(:class_of_predicate,
+                                                     predicate)
+            else
+              instantiable = @calling_class
+            end
+            if instantiable
+              entity = instantiable.new(solr_representation: doc,
                                         repository_url: doc['id'])
-            entity.score = doc['score']
-            url = doc['id']
-            url = transactional_url(url) if self.transaction_url.present?
-            f4_response = Fedora.client.get(
-                url, nil, { 'Accept' => 'application/n-triples' })
-            graph = RDF::Graph.new
-            graph.from_ntriples(f4_response.body)
-            entity.send(:populate_from_graph, graph)
-            @results << entity
+              entity.score = doc['score']
+              url = doc['id']
+              url = transactional_url(url) if self.transaction_url.present?
+              f4_response = Fedora.client.get(
+                  url, nil, { 'Accept' => 'application/n-triples' })
+              graph = RDF::Graph.new
+              graph.from_ntriples(f4_response.body)
+              entity.send(:populate_from_graph, graph)
+              @results << entity
+            else
+              Configuration.instance.logger.
+                  error("Unable to instantiate a class associated with "\
+                  "#{doc[Configuration.instance.solr_class_field.to_s]}")
+              @results.total_length -= 1
+            end
           rescue HTTPClient::BadResponseError => e
             # This probably means that the item was deleted from the
             # repository and the delete did not propagate to Solr for some

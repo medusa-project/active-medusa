@@ -26,7 +26,7 @@ module ActiveMedusa
     define_model_callbacks :create, :delete, :load, :save, :update,
                            only: [:after, :before]
 
-    @@entity_class_uri = nil
+    @@entity_class_uris = Set.new
     @@rdf_properties = Set.new
 
     # @!attribute container_url
@@ -90,7 +90,10 @@ module ActiveMedusa
 
     class << self
       def entity_class_uri(name = nil)
-        @entity_class_uri = name if name
+        if name
+          @entity_class_uri = name
+          @@entity_class_uris << { predicate: name, class: self }
+        end
         @entity_class_uri
       end
     end
@@ -306,6 +309,19 @@ module ActiveMedusa
     end
 
     private
+
+    ##
+    # @param predicate [String]
+    # @return [Class]
+    #
+    def self.class_of_predicate(predicate)
+      # load all entities in order to populate @@entity_class_uris
+      Dir.glob(File.join(Configuration.instance.entity_path, '*.rb')).each do |file|
+        require_relative(file)
+      end
+      d = @@entity_class_uris.select{ |u| u[:predicate] == predicate }.first
+      d ? d[:class] : nil
+    end
 
     def fetch_current_graph
       graph = RDF::Graph.new
