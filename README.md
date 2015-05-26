@@ -2,16 +2,25 @@ ActiveMedusa provides a simple ActiveRecord-like interface to a Fedora 4
 repository, using Solr for lookup and querying. It relies on a strategy like
 [fcrepo-message-consumer](https://github.com/fcrepo4/fcrepo-message-consumer)
 or [fcrepo-camel](https://github.com/fcrepo4/fcrepo-camel) to synchronize Solr
-with your repository, and never writes to Solr itself.
+with your repository, and never writes to Solr itself. This means you need to
+either maintain an
+[https://wiki.duraspace.org/display/FEDORA41/Indexing+Transformations](indexing
+transformation) or configure fcrepo-camel to route to some other endpoint that
+handles indexing. (See the
+[https://wiki.duraspace.org/display/FEDORA41/External+Search](External Search)
+and
+[https://wiki.duraspace.org/display/FEDORA41/Setup+Camel+Message+Integrations]
+(Setup Camel Message Integrations) sections of the Fedora wiki for more
+information.)
 
 # Features
 
-* Customizable RDF ontology. Create your own RDF predicates or use existing
-  ones. (ActiveMedusa does require some custom predicates, but they are
-  managed automatically and live in their own distinct namespace.)
+* Basic and somewhat customizable RDF ontology. Create your own RDF predicates
+  or use existing ones.
 * Customizable Solr schema. Although some extra fields are required, their
-  names are up to you.
+  names are up to you, and you can use dynamic fields if you want.
 * Supports both binary and container nodes.
+* Supports "belongs-to" and "has-many" relationships between entities.
 * No-configuration support for node hierarchy traversal.
 * Relatively simple and lightweight.
 
@@ -65,7 +74,7 @@ and so on.
 
     # collection.rb
     class Collection < ActiveMedusa::Base
-      entity_uri 'http://example.org/Collection'
+      entity_class_uri 'http://example.org/Collection'
       has_many :items, predicate: 'http://example.org/contains'
       rdf_property :title,
                    xs_type: :string,
@@ -75,7 +84,7 @@ and so on.
 
     # item.rb
     class Item < ActiveMedusa::Base
-      entity_uri 'http://example.org/Item'
+      entity_class_uri 'http://example.org/Item'
       has_many :bytestreams, predicate: 'http://example.org/hasBytestream'
       has_many :items, predicate: 'http://example.org/hasChild'
       belongs_to :collection, solr_field: 'collection_s'
@@ -88,24 +97,30 @@ and so on.
     
     # bytestream.rb
     class Bytestream < ActiveMedusa::Base
-      entity_uri 'http://example.org/Bytestream'
+      entity_class_uri 'http://example.org/Bytestream'
       belongs_to :item, predicate: 'http://example.org/isOwnedBy'
     end
 
-### Defining Types
+### Defining Classes
 
-Every entity needs to have a URI designating its type. This can be specified
-with the `entity_uri` method.
+Every entity needs to have a URI designating its class. This can be specified
+with the `entity_class_uri` method. The value you define will be used as the
+object of a triple whose predicate is
+`ActiveMedusa::Configuration.class_predicate`.
 
 ### Defining Properties
 
 `rdf_property` is a convenience method that maps entity properties to an
-instance's RDF graph and creates accessor and finder methods for them. You do
-not need to define all, or any, of an entity's properties with it. If you
-prefer, you can manually mutate an instance's `RDF::Graph` instance,
-accessible via `rdf_graph`. But it is useful to define at least the properties
-that you want to be searchable, because they will receive `find_by_x` methods
-(see "Loading Entities" later on).
+instance's RDF graph and creates accessor and finder methods for them.
+
+`rdf_property` predicates must be unique and can only be used in one triple per
+entity instance.
+
+You do not need to define all, or any, of an entity's properties with
+`rdf_property`. If you prefer, you can manually mutate an instance's
+`RDF::Graph` instance, accessible via `rdf_graph`. But it is useful to define
+at least the properties that you want to be searchable, because they will
+receive `find_by_x` methods (see "Loading Entities").
 
 ### Defining Relationships
 
@@ -161,12 +176,15 @@ Call `delete` on an entity. This method accepts an optional boolean
 
 ## Loading Entities
 
+*Note: Newly created entities cannot be loaded until the Solr index has been
+committed. ActiveMedusa will not commit it automatically.*
+
 To load an item by some property, you can use one of the finder methods, like
 `find`, which will find by repository UUID:
 
     item = Item.find('some UUID')
 
-If multiple entities are found, it will return only one. This is the only
+If `find` finds multiple entities, it will return only one. This is the only
 finder method that will raise an error if nothing is found.
 
 Alternatively, you can find by repository URI:
@@ -235,24 +253,19 @@ You can attach binary nodes to any container as child nodes.
 
 ## Searching For Entities
 
-*Note: Newly created entities will not appear in search results in the
-same thread unless enough time has elapsed for Solr to have received them from
-fcrepo-camel/fcrepo-message-consumer, which is rarely the case. An easy and
-ugly way of getting around this is to `sleep` for a bit after saving an entity
-to wait for it to catch up - hoping that it does in time. But it's best to
-simply not try to do it.*
+*Note 1: Newly added entities will not appear in search results until the Solr
+index has been committed. ActiveMedusa will not commit it automatically.*
+
+*Note 2: Newly created entities will not appear in search results in the
+same thread unless enough time has elapsed for Solr to have received them,
+which is rarely the case. An easy and ugly way of getting around this is to
+`sleep` for a bit after saving an entity to wait for it to catch up - hoping
+that it does in time. But it's best to simply not try to do it.*
 
     items = Item.all.where(some_property: 'cats').
-        where('arbitrary Solr query').
-        order('some_solr_field' => :asc).start(21).limit(20)
+        where('arbitrary Solr query')
 
-Items are loaded when `to_a` is called, explicitly or implicitly. So:
-
-    items.each do |item|
-      # At this point, the Solr query has been executed, and items will be
-      # loaded one-by-one from Fedora with each iteration of the loop.
-      # TODO: is the above true or are they loaded all at once?
-    end
+Items are loaded when `to_a` is called, explicitly or implicitly, as by `each`.
 
 ### Ordering
 
@@ -268,9 +281,13 @@ If no sort order is provided (via `order`), results will be sorted by relevance.
 
 ### Counts
 
-    items.count # shortcut for items.to_a.total_length
+    items = Item.all
+    puts items.count # shortcut for items.to_a.total_length
 
-This method simply returns the count provided by Solr, so it's fast.
+### Start/Limit
+
+    items = Item.all
+    puts items.start(20).limit(20)
 
 ### Faceting
 
@@ -300,12 +317,10 @@ retrieved entity.
 
 ### "More Like This"
 
-If you have the MoreLikeThisHandler enabled in Solr, you can do queries by
-similarity:
+If you have the [https://wiki.apache.org/solr/MoreLikeThisHandler]
+(MoreLikeThisHandler) enabled in Solr, you can query by similarity:
 
-    Item.find_by_id(id).more_like_this.limit(5)
-
-TODO: tell how to enable it
+    item = Item.find(id).more_like_this.limit(5)
 
 ### Transactions
 
@@ -325,7 +340,8 @@ ActiveRecord validation methods on your ActiveMedusa entities.
 ## Forms
 
 Because `ActiveMedusa::Base` includes `ActiveModel::Model`, your ActiveMedusa
-entities should work perfectly well with Rails' FormHelper.
+entities should work perfectly well with Rails' FormHelper. (Other form
+frameworks are untested.)
 
 ## Callbacks
 

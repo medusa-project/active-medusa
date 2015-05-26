@@ -167,7 +167,7 @@ module ActiveMedusa
       if @calling_class and !@loaded
         # limit the query to the calling class
         @where_clauses << "#{Configuration.instance.solr_class_field}:\""\
-        "#{@calling_class.entity_uri}\""
+        "#{@calling_class.entity_class_uri}\""
         params = {
             q: @where_clauses.join(' AND '),
             df: Configuration.instance.solr_default_search_field,

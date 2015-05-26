@@ -26,7 +26,7 @@ module ActiveMedusa
     define_model_callbacks :create, :delete, :load, :save, :update,
                            only: [:after, :before]
 
-    @@entity_uri = nil
+    @@entity_class_uri = nil
     @@rdf_properties = Set.new
 
     # @!attribute container_url
@@ -89,9 +89,9 @@ module ActiveMedusa
     end
 
     class << self
-      def entity_uri(name = nil)
-        @entity_uri = name if name
-        @entity_uri
+      def entity_class_uri(name = nil)
+        @entity_class_uri = name if name
+        @entity_class_uri
       end
     end
 
@@ -342,7 +342,7 @@ module ActiveMedusa
           RDF::URI('http://fedora.info/definitions/v4/indexing#Indexable'))
       graph << RDF::Statement.new(
           RDF::URI(), RDF::URI(Configuration.instance.class_predicate),
-          RDF::URI(self.class.entity_uri))
+          RDF::URI(self.class.entity_class_uri))
       graph
     end
 
