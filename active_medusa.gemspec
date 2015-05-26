@@ -18,6 +18,7 @@ Gem::Specification.new do |spec|
   spec.license       = 'NCSA'
   spec.platform      = Gem::Platform::RUBY
   spec.required_ruby_version = '>= 2.0.0'
+  spec.extra_rdoc_files = ['LICENSE', 'README.md']
 
   # Prevent pushing this gem to RubyGems.org by setting 'allowed_push_host', or
   # delete this section to allow pushing this gem to any host.
