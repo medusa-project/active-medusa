@@ -11,8 +11,8 @@ PATH
       activemodel
       activesupport
       globalid
-      rdf
-      rdf-turtle
+      rdf (~> 1.1.13)
+      rdf-turtle (~> 1.1.7)
       rsolr
 
 GEM
@@ -29,14 +29,11 @@ GEM
       tzinfo (~> 1.1)
     ansi (1.5.0)
     builder (3.2.2)
-    ebnf (0.3.6)
-      haml (~> 4.0)
+    ebnf (0.3.9)
       rdf (~> 1.1)
       sxp (~> 0.1, >= 0.1.3)
     globalid (0.3.5)
       activesupport (>= 4.1.0)
-    haml (4.1.0.beta.1)
-      tilt
     i18n (0.7.0)
     json (1.8.2)
     link_header (0.0.8)
@@ -47,11 +44,11 @@ GEM
       minitest (>= 5.0)
       ruby-progressbar
     rake (10.4.2)
-    rdf (1.1.12)
+    rdf (1.1.13)
       link_header (~> 0.0, >= 0.0.8)
-    rdf-turtle (1.1.5)
+    rdf-turtle (1.1.7)
       ebnf (~> 0.3, >= 0.3.6)
-      rdf (~> 1.1, >= 1.1.4)
+      rdf (~> 1.1, >= 1.1.10)
     rdoc (4.2.0)
       json (~> 1.4)
     rsolr (1.0.12)
@@ -59,7 +56,6 @@ GEM
     ruby-progressbar (1.7.5)
     sxp (0.1.5)
     thread_safe (0.3.5)
-    tilt (1.4.1)
     tzinfo (1.2.2)
       thread_safe (~> 0.1)
     yard (0.8.7.6)
