@@ -8,7 +8,16 @@ module ActiveMedusa
 
     module ClassMethods
 
+      ##
+      # Set of hashes with the following required keys: `:entity`,
+      # `:predicate`, `:solr_field`; and the following optional keys: `:name`
+      # (specifies the name of the accessor method)
+      #
       @@belongs_to_defs = Set.new
+
+      ##
+      # Set of hashes with the following required keys: `:entity`, `:predicate`
+      #
       @@has_many_defs = Set.new
 
       ##
@@ -85,14 +94,15 @@ module ActiveMedusa
     end
 
     ##
-    # @return [Set] Set of all LDP children *of the same type*. TODO: fix that
+    # @return [Set] Set of all LDP children for which there exist corresponding
+    # `ActiveMedusa::Base` subclasses.
     #
     def children
       unless @children.any?
         self.rdf_graph.each_statement do |st|
           if st.predicate.to_s == 'http://www.w3.org/ns/ldp#contains'
             # TODO: make this more efficient
-            child = self.class.find_by_uri(st.object.to_s)
+            child = ActiveMedusa::Base.find_by_uri(st.object.to_s)
             @children << child if child
           end
         end
@@ -101,18 +111,14 @@ module ActiveMedusa
     end
 
     ##
-    # @return [ActiveMedusa::Base] `ActiveMedusa::Base` subclass. Will return
-    # nil if the parent is not the same type. TODO: fix that
+    # @return [ActiveMedusa::Base] `ActiveMedusa::Base` subclass
     #
     def parent
       unless @parent
         self.rdf_graph.each_statement do |st|
           if st.predicate.to_s ==
               'http://fedora.info/definitions/v4/repository#hasParent'
-            # TODO: self.class is wrong; should be the type of the node based
-            # on its Config.instance.class_predicate
-            #@parent = self.class.new(container_url: st.object.to_s)
-            @parent = self.class.find_by_uri(st.object.to_s)
+            @parent = ActiveMedusa::Base.find_by_uri(st.object.to_s)
             break
           end
         end

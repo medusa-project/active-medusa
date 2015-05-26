@@ -256,6 +256,9 @@ Likewise, a child can get its parent:
     parent = child.parent
     puts parent.class
 
+Note that these will only work for parent or child containers that have a class
+triple (the predicate being the value of `Configuration.class_predicate`).
+
 ## Binary Nodes
 
 TODO: write this
