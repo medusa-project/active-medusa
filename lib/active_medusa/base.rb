@@ -368,6 +368,7 @@ module ActiveMedusa
       self.rdf_graph = graph
 
       self.uuid = graph.any_object('http://fedora.info/definitions/v4/repository#uuid').to_s
+      self.container_url = graph.any_object('http://fedora.info/definitions/v4/repository#hasParent').to_s
 
       # set values of subclass `rdf_property` definitions
       @@rdf_properties.select{ |p| p[:class] == self.class }.each do |prop|
