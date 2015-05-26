@@ -148,7 +148,6 @@ module ActiveMedusa
     def initialize(params = {})
       @belongs_to = {} # entity name => ActiveMedusa::Relation TODO: move to Relationships
       @has_many = {} # entity name => ActiveMedusa::Relation TODO: move to Relationships
-      @children = Set.new # TODO: make this an ActiveMedusa::Relation somehow (considering that it may contain varying types) and move to Relationships
       @destroyed = false
       @loaded = false
       @persisted = false
@@ -234,9 +233,7 @@ module ActiveMedusa
     end
 
     def reload!
-      if self.persisted?
-        populate_from_graph(fetch_current_graph)
-      end
+      populate_from_graph(fetch_current_graph) if self.persisted?
     end
 
     ##

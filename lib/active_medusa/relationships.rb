@@ -94,11 +94,12 @@ module ActiveMedusa
     end
 
     ##
-    # @return [Set] Set of all LDP children for which there exist corresponding
-    # `ActiveMedusa::Base` subclasses.
+    # @return [ActiveMedusa::Relation] Relation of all LDP children for which
+    # there exist corresponding `ActiveMedusa::Base` subclasses.
     #
     def children
-      unless @children.any?
+      unless @children and @children.any?
+        @children = ActiveMedusa::Relation.new(ActiveMedusa::Base)
         self.rdf_graph.each_statement do |st|
           if st.predicate.to_s == 'http://www.w3.org/ns/ldp#contains'
             # TODO: make this more efficient
