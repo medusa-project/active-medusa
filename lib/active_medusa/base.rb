@@ -14,12 +14,11 @@ module ActiveMedusa
   ##
   # Abstract class from which all ActiveMedusa entities should inherit.
   #
-  class Base # TODO: rename to Container or create Container/Binary subclasses
+  class Base
 
     extend ActiveModel::Callbacks
     include ActiveModel::Model
     include GlobalID::Identification
-    include Querying
     include Relationships
     include Transactions
 
@@ -47,15 +46,6 @@ module ActiveMedusa
     #   @return [String] The requested Fedora URI last path component for new
     #           entities.
     attr_accessor :requested_slug
-
-    # @!attribute score
-    #   @return [Float] Float populated by `ActiveMedusa::Relation`; not
-    #           persisted.
-    attr_accessor :score
-
-    # @!attribute solr_representation
-    #   @return [Hash] Hash of the instance's representation in Solr.
-    attr_accessor :solr_representation
 
     # @!attribute transaction_url
     #   @return [String] URL of the transaction in which the entity exists.
@@ -151,7 +141,6 @@ module ActiveMedusa
       @destroyed = false
       @loaded = false
       @persisted = false
-      @rdf_graph = new_rdf_graph
       params.except(:id, :uuid).each do |k, v|
         send("#{k}=", v) if respond_to?("#{k}=")
       end
@@ -216,13 +205,6 @@ module ActiveMedusa
         end
       end
       super
-    end
-
-    ##
-    # @return [ActiveMedusa::Relation]
-    #
-    def more_like_this
-      ActiveMedusa::Relation.new(self).more_like_this
     end
 
     ##
@@ -305,6 +287,46 @@ module ActiveMedusa
       nil
     end
 
+    protected
+
+    def fetch_current_graph
+      graph = RDF::Graph.new
+      url = self.repository_metadata_url # already transactionalized
+      if url
+        response = Fedora.client.get(
+            url, nil, { 'Accept' => 'application/n-triples' })
+        graph.from_ntriples(response.body)
+      end
+      graph
+    end
+
+    ##
+    # Saves an existing node.
+    #
+    # @raise [RuntimeError]
+    #
+    def save_existing
+      self.rdf_graph = populate_graph(fetch_current_graph)
+      url = transactional_url(self.repository_metadata_url)
+      body = self.rdf_graph.to_ttl
+      headers = { 'Content-Type' => 'text/turtle' }
+      # TODO: prefixes http://blog.datagraph.org/2010/04/parsing-rdf-with-ruby
+      begin
+        Fedora.client.put(url, body, headers)
+      rescue HTTPClient::BadResponseError => e
+        raise "#{e.res.status}: #{e.res.body}"
+      end
+    end
+
+    ##
+    # Creates a new node.
+    #
+    # @raise [RuntimeError]
+    #
+    def save_new
+      raise 'Subclasses must override save_new()'
+    end
+
     private
 
     ##
@@ -320,17 +342,6 @@ module ActiveMedusa
       d ? d[:class] : nil
     end
 
-    def fetch_current_graph
-      graph = RDF::Graph.new
-      url = transactional_url(self.repository_url)
-      if url
-        response = Fedora.client.get(
-            url, nil, { 'Accept' => 'application/n-triples' })
-        graph.from_ntriples(response.body)
-      end
-      graph
-    end
-
     ##
     # @param loaded [Boolean]
     #
@@ -338,25 +349,6 @@ module ActiveMedusa
       run_callbacks :load do
         @loaded = loaded
       end
-    end
-
-    ##
-    # @return [RDF::Graph]
-    #
-    def new_rdf_graph
-      graph = RDF::Graph.new
-      graph << RDF::Statement.new(
-          RDF::URI(),
-          RDF::URI('http://fedora.info/definitions/v4/indexing#hasIndexingTransformation'),
-          Configuration.instance.fedora_indexing_transformation)
-      graph << RDF::Statement.new(
-          RDF::URI(),
-          RDF::URI('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
-          RDF::URI('http://fedora.info/definitions/v4/indexing#Indexable'))
-      graph << RDF::Statement.new(
-          RDF::URI(), RDF::URI(Configuration.instance.class_predicate),
-          RDF::URI(self.class.entity_class_uri))
-      graph
     end
 
     ##
@@ -418,47 +410,6 @@ module ActiveMedusa
             RDF::URI(), RDF::URI(predicate), RDF::URI(entity.repository_url)) if entity
       end
       graph
-    end
-
-    ##
-    # Updates an existing node.
-    #
-    # @raise [RuntimeError]
-    #
-    def save_existing
-      self.rdf_graph = populate_graph(fetch_current_graph)
-      url = transactional_url(self.repository_url)
-      body = self.rdf_graph.to_ttl
-      headers = { 'Content-Type' => 'text/turtle' }
-      # TODO: prefixes http://blog.datagraph.org/2010/04/parsing-rdf-with-ruby
-      begin
-        Fedora.client.put(url, body, headers)
-      rescue HTTPClient::BadResponseError => e
-        raise "#{e.res.status}: #{e.res.body}"
-      end
-    end
-
-    ##
-    # Creates a new node.
-    #
-    # @raise [RuntimeError]
-    #
-    def save_new
-      run_callbacks :create do
-        self.rdf_graph = populate_graph(fetch_current_graph)
-        url = transactional_url(self.container_url)
-        body = self.rdf_graph.to_ttl
-        headers = { 'Content-Type' => 'text/turtle' }
-        headers['Slug'] = self.requested_slug if self.requested_slug
-        # TODO: prefixes http://blog.datagraph.org/2010/04/parsing-rdf-with-ruby
-        begin
-          response = Fedora.client.post(url, body, headers)
-        rescue HTTPClient::BadResponseError => e
-          raise "#{e.res.status}: #{e.res.body}"
-        end
-        self.repository_url = nontransactional_url(response.header['Location'].first)
-        self.requested_slug = nil
-      end
     end
 
   end

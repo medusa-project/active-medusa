@@ -165,9 +165,9 @@ module ActiveMedusa
 
     def load
       if @calling_class and !@loaded
-        # if @calling_class is ActiveMedusa::Base, we need to query across
-        # all entities.
-        if @calling_class != ActiveMedusa::Base
+        # if @calling_class is ActiveMedusa::Container, query across all
+        # entities.
+        if @calling_class != ActiveMedusa::Container
           # limit the query to the calling class
           @where_clauses << "#{Configuration.instance.solr_class_field}:\""\
           "#{@calling_class.entity_class_uri}\""
@@ -198,7 +198,7 @@ module ActiveMedusa
         @results.total_length = solr_result['response']['numFound'].to_i
         solr_result['response']['docs'].each do |doc|
           begin
-            if @calling_class == ActiveMedusa::Base
+            if @calling_class == ActiveMedusa::Container
               predicate = doc[Configuration.instance.solr_class_field.to_s]
               instantiable = ActiveMedusa::Base.send(:class_of_predicate,
                                                      predicate)

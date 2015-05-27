@@ -18,7 +18,7 @@ information.)
 * Basic and somewhat customizable RDF ontology. Create your own RDF predicates
   or use existing ones.
 * Customizable Solr schema. Although some extra fields are required, their
-  names are up to you, and you can use dynamic fields if you want.
+  names are up to you.
 * Supports both binary and container nodes.
 * Supports "belongs-to" and "has-many" relationships between entities.
 * No-configuration support for node hierarchy traversal.
@@ -50,14 +50,14 @@ ActiveMedusa needs to know some stuff about your setup. Tell it like this:
       config.entity_path = File.join(Rails.root, 'app', 'models')
       config.fedora_url = 'http://localhost:8080/fcrepo/rest'
       config.logger = Rails.logger
-      config.class_predicate = 'http://www.w3.org/2000/01/rdf-schema#Class'
+      config.class_predicate = 'http://example.org/hasClass'
       config.solr_url = 'http://localhost:8983/solr'
       config.solr_core = 'collection1'
       config.solr_id_field = :id
-      config.solr_parent_id_field = :parent_id
-      config.solr_class_field = :class # used by ActiveMedusa finder methods
-      config.solr_uuid_field = :uuid
-      config.solr_default_search_field = :searchall
+      config.solr_parent_id_field = :parent_id_s
+      config.solr_class_field = :class_s # used by ActiveMedusa finder methods
+      config.solr_uuid_field = :uuid_s
+      config.solr_default_search_field = :searchall_txt
       config.solr_facet_fields = [:collection_facet, :creator_facet,
                                   :date_facet, :format_facet, :language_facet]
     end
@@ -70,11 +70,14 @@ ActiveMedusa needs to know some stuff about your setup. Tell it like this:
 Let's declare some entity ("model") classes. `Collection` and `Item` will
 correspond to Fedora 4 container nodes, and `Bytestream` will correspond to
 Fedora binary nodes. These are all common entities found in many repositories,
-but you could easily change the terminology to `Series` instead of `Collection`,
-and so on.
+but you could change the terminology to `Series` instead of `Collection`,
+and so on. Note that `Collection` and `Item` inherit from
+`ActiveMedusa::Container` while `Bytestream` inherits from
+`ActiveMedusa::Binary`. These are the two base classes from which all of your
+entities must inherit.
 
     # collection.rb
-    class Collection < ActiveMedusa::Base
+    class Collection < ActiveMedusa::Container
       entity_class_uri 'http://example.org/Collection'
       has_many :items, predicate: 'http://example.org/contains'
       rdf_property :title,
@@ -84,7 +87,7 @@ and so on.
     end
 
     # item.rb
-    class Item < ActiveMedusa::Base
+    class Item < ActiveMedusa::Container
       entity_class_uri 'http://example.org/Item'
       has_many :bytestreams, predicate: 'http://example.org/hasBytestream'
       has_many :items, predicate: 'http://example.org/hasChild'
@@ -97,7 +100,7 @@ and so on.
     end
     
     # bytestream.rb
-    class Bytestream < ActiveMedusa::Base
+    class Bytestream < ActiveMedusa::Binary
       entity_class_uri 'http://example.org/Bytestream'
       belongs_to :item, predicate: 'http://example.org/isOwnedBy'
     end
@@ -115,7 +118,7 @@ object of a triple whose predicate is
 instance's RDF graph and creates accessor and finder methods for them.
 
 `rdf_property` predicates must be unique and can only be used in one triple per
-entity instance.
+entity graph.
 
 You do not need to define all, or any, of an entity's properties with
 `rdf_property`. If you prefer, you can manually mutate an instance's
@@ -134,8 +137,7 @@ specified, so for every `has_many` on an owning entity, there must be a
 
 ## Creating Entities
 
-TODO: creating entities as children of other entities (but once created, can't
-be moved)
+TODO: creating entities as children of other entities
 
 `Item.new` will create an `Item` object, but it will not be saved to the
 repository until `save` is called on it.
@@ -154,7 +156,7 @@ Both of these methods accept a hash of properties as an argument.
 Bang versions (!) of `create` and `save` are available that will raise errors
 if anything goes wrong.
 
-### Requesting a Slug
+### Requesting a Slug 🐌
 
 You can request that your new entity be given a particular slug in the
 repository before you save it:
@@ -168,12 +170,12 @@ and no error will be raised if it doesn't.
 
 ## Updating Entities
 
-Simply call `update` an an entity. (Bang version [!] also available.)
+Simply call `update` on an entity. (Bang version [!] also available.)
 
 ## Deleting Entities
 
-Call `delete` on an entity. This method accepts an optional boolean
-`also_tombstone` parameter that will delete its tombstone as well.
+Call `delete` on an entity. This method accepts an optional boolean parameter
+that will delete its tombstone as well.
 
 ## Loading Entities
 
@@ -206,10 +208,10 @@ Once an entity has been loaded, it can be reloaded:
 Suppose you have an entity URI or UUID, but you are unsure of the class of
 the entity it identifies -- you don't know whether it's an `Item` or a
 `Collection`, and therefore don't know which class `find` method to use. In
-that case, you can simply call `find` on `ActiveMedusa::Base` to return an
+that case, you can simply call `find` on `ActiveMedusa::Container` to return an
 instance of the correct class:
 
-    item_or_collection = ActiveMedusa::Base.find('...')
+    item_or_collection = ActiveMedusa::Container.find('...')
 
 ### Reading & Writing Metadata
 
@@ -224,11 +226,10 @@ instance. This returns an `RDF::Graph` instance which you can read:
 
 As well as write to:
 
-    item.rdf_graph << RDF::Statement.new(nil,
-        RDF::URI(http://purl.org/dc/elements/1.1/title),
-        'Epistemology of the Kumquat')
+    item.rdf_graph << [nil, RDF::URI(http://purl.org/dc/elements/1.1/title),
+        'Epistemology of the Kumquat']
 
-Of course, you would need to call `item.save` to persist this change.
+You would then need to call `item.save` to persist this change.
 
 ### Other Useful Entity Methods
 
@@ -247,23 +248,56 @@ Of course, you would need to call `item.save` to persist this change.
 The `children` method will allow you to enumerate a container's LDP children:
 
     collection = Collection.find('..')
-    collection.children.each do |child|
-      ..
-    end
+    collection.children.each { |child| .. }
 
 Likewise, a child can get its parent:
 
     parent = child.parent
-    puts parent.class
 
 Note that these will only work for parent or child containers that have a class
 triple (the predicate being the value of `Configuration.class_predicate`).
 
-## Binary Nodes
+## Binary Entities
 
-TODO: write this
+Binary entities work similarly to container entities, with a few differences.
+Using the example above, a `Bytestream` can be initialized like an `Item`:
 
-You can attach binary nodes to any container as child nodes.
+    b = Bytestream.new(container_url: 'http://url/of/parent/container')
+
+But before it can be saved, we will want to associate some data with it. We can
+specify a file to upload:
+
+    b.upload_pathname = File.join('path', 'to', 'a', 'file')
+
+Or, we can specify an external URL:
+
+    b.external_resource_url = 'http://example.org/'
+
+Optionally, but ideally, we should also specify the binary's media type:
+
+    b.media_type = 'image/tiff'
+
+The binary can then be saved just like a container:
+
+    b.save!
+    puts b.repository_url # binary content now available here
+
+Once the binary content has been saved, it cannot be changed. In Fedora,
+binary nodes have supplementary metadata available at the `/fcr:metadata`
+path under their URL. This is the only thing that will be updated when you
+call `save` on an already-saved binary resource, A binary resource's RDF graph
+is available via the `rdf_graph` accessor, just like a container.
+
+### Accessing Binary Nodes
+
+Binary nodes are not indexed, and therefore not findable by Solr. If you want
+to be able to retrieve them later via ActiveMedusa, you need to make sure they
+are accessible via a relationship with some other entity. In the example above,
+`Item` has a one-to-many relationship with `Bytestream`, which makes its
+bytestreams accessible via the `bytestreams` accessor:
+
+    item = Item.find('..')
+    item.bytestreams.each { |b| .. }
 
 ## Searching For Entities
 
@@ -273,13 +307,16 @@ index has been committed. ActiveMedusa will not commit it automatically.*
 *Note 2: Newly created entities will not appear in search results in the
 same thread unless enough time has elapsed for Solr to have received them,
 which is rarely the case. An easy and ugly way of getting around this is to
-`sleep` for a bit after saving an entity to wait for it to catch up - hoping
+`sleep` for a bit after saving an entity to wait for Solr to catch up - hoping
 that it does in time. But it's best to simply not try to do it.*
+
+*Note 3: Binary entities are not searchable (see **Binary Entities**).
 
     items = Item.all.where(some_property: 'cats').
         where('arbitrary Solr query')
 
-Items are loaded when `to_a` is called, explicitly or implicitly, as by `each`.
+Items are loaded when `to_a` is called, either explicitly or implicitly, such
+as by `each`.
 
 ### Ordering
 
@@ -290,8 +327,6 @@ to sort by any sortable Solr field:
     Item.all.order('some_solr_field') # same effect as above
     Item.all.order('some_solr_field' => :desc)
     Item.all.order('some_solr_field desc')
-
-If no sort order is provided (via `order`), results will be sorted by relevance.
 
 ### Counts
 
@@ -374,12 +409,18 @@ Your entities can use the following `ActiveModel::Model` callbacks:
 
 Example:
 
-    class Item < ActiveMedusa::Base
+    class Item < ActiveMedusa::Container
       before_save :do_something
       
       def do_something
       end
     end
+
+# Limitations/Caveats
+
+* Uniquing is not yet in place, i.e. it is possible to load multiple instances
+  of an object referencing the same Fedora node.
+* Moving repository nodes is not yet supported.
 
 # Development
 
@@ -397,10 +438,12 @@ commits and tags, and push the `.gem` file to
 `ActiveMedusa::Relation` has `solr_request` and `solr_response` methods that
 can help in tracking down issues with Solr. Use it like this:
 
-    items = Item.all
-    items.to_a # executes a Solr request
+    items = Item.all.to_a # executes a Solr request
     puts items.solr_request
     puts items.solr_response
+    
+`solr_request` and `solr_response` will return `nil` until a request has been
+executed.
 
 # Contributing
 

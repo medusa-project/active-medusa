@@ -103,7 +103,7 @@ module ActiveMedusa
         self.rdf_graph.each_statement do |st|
           if st.predicate.to_s == 'http://www.w3.org/ns/ldp#contains'
             # TODO: make this more efficient
-            child = ActiveMedusa::Base.find_by_uri(st.object.to_s)
+            child = ActiveMedusa::Container.find_by_uri(st.object.to_s)
             @children << child if child
           end
         end
@@ -119,7 +119,7 @@ module ActiveMedusa
         self.rdf_graph.each_statement do |st|
           if st.predicate.to_s ==
               'http://fedora.info/definitions/v4/repository#hasParent'
-            @parent = ActiveMedusa::Base.find_by_uri(st.object.to_s)
+            @parent = ActiveMedusa::Container.find_by_uri(st.object.to_s)
             break
           end
         end
