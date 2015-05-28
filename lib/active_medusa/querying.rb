@@ -25,9 +25,12 @@ module ActiveMedusa
       # @param id [String] UUID
       # @param transaction_url [String]
       # @return [ActiveMedusa::Relation]
+      # @raise [RuntimeError] If no matching entity is found
       #
       def find(id, transaction_url = nil)
-        self.find_by_uuid(id, transaction_url)
+        result = self.find_by_uuid(id, transaction_url)
+        raise "Unable to find entity with ID #{id}" unless result
+        result
       end
 
       ##
