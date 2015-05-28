@@ -263,6 +263,7 @@ module ActiveMedusa
         params.except(:id, :uuid).each do |k, v|
           send("#{k}=", v) if respond_to?("#{k}=")
         end
+        self.save
       end
     end
 
@@ -270,8 +271,12 @@ module ActiveMedusa
     # @param params [Hash]
     #
     def update!(params)
-      self.update(params)
-      self.save!
+      run_callbacks :update do
+        params.except(:id, :uuid).each do |k, v|
+          send("#{k}=", v) if respond_to?("#{k}=")
+        end
+        self.save!
+      end
     end
 
     ##
