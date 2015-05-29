@@ -149,11 +149,11 @@ TODO: creating entities as children of other entities
 repository until `save` is called on it.
 
 Before it can be saved, however, you must specify where in the Fedora node
-hierarchy you want it to reside. You can do that by setting its `container_url`
+hierarchy you want it to reside. You can do that by setting its `parent_url`
 property:
 
 ```ruby
-item = Item.new(container_url: 'http://url/of/parent/container')
+item = Item.new(parent_url: 'http://url/of/parent/container')
 item.save!
 ```
 
@@ -166,7 +166,7 @@ if anything goes wrong.
 
 ### Requesting a Slug 🐌
 
-You can request that your new entity be given a particular slug in the
+You can request that your new entity be given a particular URL slug in the
 repository before you save it:
 
 ```ruby
@@ -297,7 +297,7 @@ Binary entities work similarly to container entities, with a few differences.
 Using the example above, a `Bytestream` can be initialized like an `Item`:
 
 ```ruby
-b = Bytestream.new(container_url: 'http://url/of/parent/container')
+b = Bytestream.new(parent_url: 'http://url/of/parent/container')
 ```
 
 But before it can be saved, you will want to associate some data with it. You
@@ -354,15 +354,14 @@ index has been committed. ActiveMedusa will not commit it automatically.*
 
 *Note 2: Newly created entities will not appear in search results in the
 same thread unless enough time has elapsed for Solr to have received them,
-which is rarely the case. An easy and ugly way of getting around this is to
-`sleep` for a bit after saving an entity to wait for Solr to catch up - hoping
-that it does in time. But it's best to simply not try to do it.*
+which will rarely be the case. An ugly way of getting around this is to `sleep`
+for a bit after saving an entity to wait for Solr to catch up - hoping that it
+does in time. But it's best to simply not try to do it.*
 
 *Note 3: Binary entities are not searchable (see **Binary Entities**).
 
 ```ruby
-items = Item.all.where(some_property: 'cats').
-    where('arbitrary Solr query')
+items = Item.all.where(some_rdf_property: 'cats').where('arbitrary Solr query')
 ```
 
 Items are loaded when `to_a` is called, either explicitly or implicitly, such
@@ -426,8 +425,9 @@ retrieved entity.
 
 ### "More Like This"
 
-If you have the [https://wiki.apache.org/solr/MoreLikeThisHandler]
-(MoreLikeThisHandler) enabled in Solr, you can query by similarity:
+If you have the [MoreLikeThisHandler]
+(https://wiki.apache.org/solr/MoreLikeThisHandler) enabled in Solr, you can
+query by similarity:
 
 ```ruby
 item = Item.find(id).more_like_this.limit(5)

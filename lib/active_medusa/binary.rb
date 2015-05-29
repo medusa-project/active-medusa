@@ -52,11 +52,11 @@ module ActiveMedusa
                   self.media_type.present?
               headers['Slug'] = self.requested_slug if
                   self.requested_slug.present?
-              url = transactional_url(self.container_url)
+              url = transactional_url(self.parent_url)
               response = Fedora.client.post(url, file, headers)
             end
           elsif self.external_resource_url
-            url = transactional_url(self.container_url)
+            url = transactional_url(self.parent_url)
             headers = { 'Content-Type' => 'text/plain' }
             headers['Slug'] = self.requested_slug if
                 self.requested_slug.present?

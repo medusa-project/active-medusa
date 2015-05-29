@@ -47,7 +47,7 @@ module ActiveMedusa
     def save_new
       run_callbacks :create do
         populate_graph(self.rdf_graph)
-        url = transactional_url(self.container_url)
+        url = transactional_url(self.parent_url)
         body = self.rdf_graph.to_ttl
         headers = { 'Content-Type' => 'text/turtle' }
         headers['Slug'] = self.requested_slug if self.requested_slug.present?

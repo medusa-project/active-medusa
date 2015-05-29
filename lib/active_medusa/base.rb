@@ -29,9 +29,9 @@ module ActiveMedusa
     @@entity_class_uris = Set.new
     @@rdf_properties = Set.new
 
-    # @!attribute container_url
+    # @!attribute parent_url
     #   @return [String] The URL of the entity's parent container.
-    attr_accessor :container_url
+    attr_accessor :parent_url
 
     # @!attribute rdf_graph
     #   @return [RDF::Graph] RDF graph containing the instance's repository
@@ -245,7 +245,7 @@ module ActiveMedusa
       run_callbacks :save do
         if self.uuid
           save_existing
-        elsif self.container_url
+        elsif self.parent_url
           save_new
         else
           raise 'UUID and container URL are both nil. One or the other is '\
@@ -405,7 +405,7 @@ module ActiveMedusa
       self.rdf_graph = graph
 
       self.uuid = graph.any_object('http://fedora.info/definitions/v4/repository#uuid').to_s
-      self.container_url = graph.any_object('http://fedora.info/definitions/v4/repository#hasParent').to_s
+      self.parent_url = graph.any_object('http://fedora.info/definitions/v4/repository#hasParent').to_s
 
       # set values of subclass `rdf_property` definitions
       @@rdf_properties.select{ |p| p[:class] == self.class }.each do |prop|
