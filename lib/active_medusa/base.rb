@@ -117,11 +117,7 @@ module ActiveMedusa
     #        `:string`, `:integer`, `:boolean`, `:anyURI`; `:solr_field`
     #
     def self.rdf_property(name, options)
-      @@rdf_properties << { class: self,
-                            name: name,
-                            predicate: options[:predicate],
-                            type: options[:xs_type],
-                            solr_field: options[:solr_field] }
+      @@rdf_properties << options.merge(class: self, name: name)
       instance_eval { attr_accessor name }
     end
 
@@ -333,7 +329,7 @@ module ActiveMedusa
       @@rdf_properties.select{ |p| p[:class] == self.class }.each do |prop|
         graph.delete([nil, RDF::URI(prop[:predicate]), nil])
         value = send(prop[:name])
-        case prop[:type].to_sym
+        case prop[:xs_type].to_sym
           when :boolean
             if value != nil
               value = ['true', '1'].include?(value.to_s) ? 'true' : 'false'
