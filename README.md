@@ -53,6 +53,7 @@ ActiveMedusa::Configuration.new do |config|
   config.class_predicate = 'http://example.org/hasClass'
   config.solr_url = 'http://localhost:8983/solr'
   config.solr_core = 'collection1'
+  config.solr_more_like_this_endpoint = '/mlt'
   config.solr_id_field = :id
   config.solr_parent_id_field = :parent_id_s
   config.solr_class_field = :class_s # used by ActiveMedusa finder methods
@@ -254,7 +255,7 @@ end
 As well as write to:
 
 ```ruby
-item.rdf_graph << [nil, RDF::URI(http://purl.org/dc/elements/1.1/title),
+item.rdf_graph << [nil, RDF::URI('http://purl.org/dc/elements/1.1/title'),
     'Epistemology of the Kumquat']
 ```
 
@@ -274,7 +275,7 @@ You would then need to call `item.save` to persist this change.
 
 ## Node Hierarchy Traversal
 
-The `children` method will allow you to enumerate a container's LDP children:
+The `children` method will enable you to enumerate a container's LDP children:
 
 ```ruby
 collection = Collection.find('..')
@@ -288,7 +289,7 @@ parent = child.parent
 ```
 
 Note that these will only work for parent or child containers that have a class
-triple (the predicate being the value of `Configuration.class_predicate`).
+triple; see `entity_class_uri` above.
 
 ## Binary Entities
 

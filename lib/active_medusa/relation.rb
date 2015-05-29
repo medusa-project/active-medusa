@@ -189,8 +189,10 @@ module ActiveMedusa
           params[:fq] = @facet_queries
         end
 
-        solr_result = Solr.client.get(@more_like_this ? 'mlt' : 'select', # TODO: extract this to config
-                                      params: params)
+        endpoint = @more_like_this ?
+            Configuration.instance.solr_more_like_this_endpoint.gsub(/\//, '') :
+            'select'
+        solr_result = Solr.client.get(endpoint, params: params)
         @solr_request = solr_result['request']
         @solr_response = solr_result['response']
         @results.facet_fields = solr_facet_fields_to_objects(
