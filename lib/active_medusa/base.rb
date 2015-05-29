@@ -60,6 +60,21 @@ module ActiveMedusa
     validates :uuid, allow_blank: true, length: { minimum: 36, maximum: 36 }
 
     ##
+    # @param predicate [String]
+    # @return [Class]
+    #
+    def self.class_of_predicate(predicate)
+      # load all entities in order to populate @@entity_class_uris
+      Dir.glob(File.join(Configuration.instance.entity_path, '*.rb')).each do |file|
+        require_relative(file)
+      end
+      d = @@entity_class_uris.select{ |u| u[:predicate] == predicate }.first
+      d ? d[:class] : nil
+    end
+
+    private_class_method :class_of_predicate
+
+    ##
     # @param params [Hash]
     # @return [ActiveMedusa::Base]
     #
@@ -373,19 +388,6 @@ module ActiveMedusa
     end
 
     private
-
-    ##
-    # @param predicate [String]
-    # @return [Class]
-    #
-    def self.class_of_predicate(predicate)
-      # load all entities in order to populate @@entity_class_uris
-      Dir.glob(File.join(Configuration.instance.entity_path, '*.rb')).each do |file|
-        require_relative(file)
-      end
-      d = @@entity_class_uris.select{ |u| u[:predicate] == predicate }.first
-      d ? d[:class] : nil
-    end
 
     ##
     # @param loaded [Boolean]
