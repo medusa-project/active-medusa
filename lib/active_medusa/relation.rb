@@ -207,8 +207,8 @@ module ActiveMedusa
             end
             if instantiable
               entity = instantiable.new(solr_representation: doc,
-                                        repository_url: doc['id'])
-              entity.score = doc['score']
+                                        repository_url: doc['id'],
+                                        score: doc['score'])
               url = doc['id']
               url = transactional_url(url) if self.transaction_url.present?
               f4_response = Fedora.client.get(

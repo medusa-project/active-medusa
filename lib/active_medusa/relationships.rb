@@ -9,16 +9,16 @@ module ActiveMedusa
     module ClassMethods
 
       ##
-      # Set of hashes with the following required keys: `:entity`,
-      # `:predicate`, `:solr_field`; and the following optional keys: `:name`
-      # (specifies the name of the accessor method)
+      # Set of `ActiveMedusa::Association`s
       #
-      @@belongs_to_defs = Set.new
+      @@associations = Set.new
 
       ##
-      # Set of hashes with the following required keys: `:entity`, `:predicate`
+      # @return Set of `ActiveMedusa::Association`s
       #
-      @@has_many_defs = Set.new
+      def associations
+        @@associations
+      end
 
       ##
       # @param entity [Symbol] `ActiveMedusa::Base` subclass name
@@ -27,25 +27,33 @@ module ActiveMedusa
       #                keys: `:name` (specifies the name of the accessor method)
       #
       def belongs_to(entity, options)
-        if options[:name] == 'parent'
-          raise 'Cannot define a `belongs_to` relationship named `parent`.'
-        end
+        raise 'Cannot define a `belongs_to` relationship named `parent`.' if
+            [options[:name], entity].map{ |e| e.to_s.downcase }.include?('parent')
 
-        entity = entity.to_s.downcase
+        entity_class = Object.const_get(entity.to_s.camelize)
+        self_ = self
         self.class.instance_eval do
-          @@belongs_to_defs << options.merge(entity: entity)
+          @@associations << ActiveMedusa::Association.new(
+              name: options[:name],
+              rdf_predicate: options[:predicate],
+              solr_field: options[:solr_field],
+              source_class: self_,
+              type: ActiveMedusa::Association::Type::BELONGS_TO,
+              target_class: entity_class)
         end
 
         # Define a lazy getter method to access the target of the relationship
-        define_method(options[:name] || entity) do
-          owner = @belongs_to[entity.to_sym]
+        define_method(options[:name] || entity_class.to_s.underscore) do
+          owner = @belongs_to[entity_class]
           unless owner
-            property = @@belongs_to_defs.select{ |p| p[:entity] == entity }.first
-            entity_class = Object.const_get(entity.capitalize)
+            association = @@associations.
+                select{ |a| a.source_class == self.class and
+                a.target_class == entity_class and
+                a.type == ActiveMedusa::Association::Type::BELONGS_TO }.first
             self.rdf_graph.each_statement do |st|
-              if st.predicate.to_s == property[:predicate]
-                owner = entity_class.find_by_uri(st.object.to_s)
-                @belongs_to[entity.to_sym] = owner
+              if st.predicate.to_s == association.rdf_predicate
+                owner = association.target_class.find_by_uri(st.object.to_s)
+                @belongs_to[entity_class] = owner
                 break
               end
             end
@@ -54,41 +62,46 @@ module ActiveMedusa
         end
 
         # Define a setter method to access the target of the relationship
-        define_method("#{options[:name] || entity}=") do |value|
-          @belongs_to[entity.to_sym] = value
+        define_method("#{options[:name] || entity_class.to_s.underscore}=") do |owner|
+          raise 'Owner must descend from ActiveMedusa::Base' unless
+              owner.kind_of?(ActiveMedusa::Base)
+          # store a reference to the owner
+          @belongs_to[entity_class] = owner
         end
       end
 
       ##
       # @param entities [Symbol] Pluralized `ActiveMedusa::Base` subclass name
-      # @param options [Hash] Hash with the following options: `:predicate`
       #
-      def has_many(entities, options)
-        if options[:entities] == 'children'
-          raise 'Cannot define a `has_many` relationship named `children`.'
-        end
+      def has_many(entities)
+        raise 'Cannot define a `has_many` relationship named `children`.' if
+            entities.to_s == 'children'
 
-        entity = entities.to_s.singularize
+        entity_class = Object.const_get(entities.to_s.singularize.camelize)
         self.class.instance_eval do
-          @@has_many_defs << options.merge(entity: entity)
+          @@associations << ActiveMedusa::Association.new(
+              name: entities.to_s,
+              source_class: self.class,
+              type: ActiveMedusa::Association::Type::HAS_MANY,
+              target_class: entity_class)
         end
 
+        ##
+        # @param entities [String|Symbol]
+        # @return [ActiveMedusa::Base]
+        #
         define_method(entities) do
-          owned = @has_many[entities.to_sym]
+          owned = @has_many[entity_class] # Class => Relation
           unless owned
-            entity_class = Object.const_get(entity.capitalize)
-            solr_rel_field = entity_class.get_belongs_to_defs.
-                select{ |p| p[:entity] == self.class.to_s.downcase }.
-                first[:solr_field]
+            solr_rel_field = entity_class.associations.
+                select{ |a| a.source_class == self.class and
+                a.target_class == self.class and
+                a.type == ActiveMedusa::Association::Type::HAS_MANY }.first.solr_field
             owned = entity_class.where(solr_rel_field => self.repository_url)
-            @has_many[entities.to_sym] = owned
+            @has_many[entity_class] = owned
           end
           owned
         end
-      end
-
-      def get_belongs_to_defs
-        @@belongs_to_defs
       end
 
     end
@@ -99,7 +112,7 @@ module ActiveMedusa
     #
     def children
       unless @children and @children.any?
-        @children = ActiveMedusa::Relation.new(ActiveMedusa::Base)
+        @children = ActiveMedusa::Relation.new(ActiveMedusa::Container)
         self.rdf_graph.each_statement do |st|
           if st.predicate.to_s == 'http://www.w3.org/ns/ldp#contains'
             # TODO: make this more efficient

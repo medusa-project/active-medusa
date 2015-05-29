@@ -39,17 +39,6 @@ module ActiveMedusa
 
     protected
 
-    def fetch_current_graph
-      graph = RDF::Graph.new
-      url = transactional_url(self.repository_url)
-      if url
-        response = Fedora.client.get(
-            url, nil, { 'Accept' => 'application/n-triples' })
-        graph.from_ntriples(response.body)
-      end
-      graph
-    end
-
     ##
     # Creates a new node.
     #
@@ -57,6 +46,7 @@ module ActiveMedusa
     #
     def save_new
       run_callbacks :create do
+        populate_graph(self.rdf_graph)
         url = transactional_url(self.container_url)
         body = self.rdf_graph.to_ttl
         headers = { 'Content-Type' => 'text/turtle' }

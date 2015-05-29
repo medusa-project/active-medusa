@@ -1,3 +1,4 @@
+require 'active_medusa/association'
 require 'active_medusa/fedora'
 require 'active_medusa/querying'
 require 'active_medusa/solr'
@@ -136,8 +137,8 @@ module ActiveMedusa
     # @param params [Hash]
     #
     def initialize(params = {})
-      @belongs_to = {} # entity name => ActiveMedusa::Relation TODO: move to Relationships
-      @has_many = {} # entity name => ActiveMedusa::Relation TODO: move to Relationships
+      @belongs_to = {} # Class => entity instance TODO: move to Relationships
+      @has_many = {} # Class => ActiveMedusa::Relation TODO: move to Relationships
       @destroyed = false
       @loaded = false
       @persisted = false
@@ -161,6 +162,7 @@ module ActiveMedusa
 
     ##
     # @param also_tombstone [Boolean]
+    # @return Boolean
     #
     def delete(also_tombstone = false)
       if @persisted and !@destroyed
@@ -174,7 +176,7 @@ module ActiveMedusa
             @destroyed = true
             @persisted = false
 
-            # TODO: delete relationships
+            # TODO: delete from dependent entities' graphs
           end
         end
         return true
@@ -306,6 +308,44 @@ module ActiveMedusa
     end
 
     ##
+    # Populates an RDF::Graph for sending to Fedora.
+    #
+    # @param graph [RDF::Graph]
+    # @return [RDF::Graph] Input graph
+    #
+    def populate_graph(graph)
+      # add properties from subclass rdf_property definitions
+      @@rdf_properties.select{ |p| p[:class] == self.class }.each do |prop|
+        graph.delete([nil, RDF::URI(prop[:predicate]), nil])
+        value = send(prop[:name])
+        case prop[:type].to_sym
+          when :boolean
+            if value != nil
+              value = ['true', '1'].include?(value.to_s) ? 'true' : 'false'
+            end
+          when :anyURI
+            value = RDF::URI(value)
+          else
+            value = value.to_s
+        end
+        graph << RDF::Statement.new(
+            RDF::URI(), RDF::URI(prop[:predicate]), value) if value.present?
+      end
+
+      # add properties from subclass belongs_to relationships
+      @belongs_to.each do |entity_name, entity|
+        predicate = self.class.associations.
+            select{ |a| a.source_class == self.class and
+            a.type == ActiveMedusa::Association::Type::BELONGS_TO and
+            a.target_class == entity.class }.first.rdf_predicate
+        graph.delete([nil, RDF::URI(predicate), nil])
+        graph << RDF::Statement.new(
+            RDF::URI(), RDF::URI(predicate), RDF::URI(entity.repository_url)) if entity
+      end
+      graph
+    end
+
+    ##
     # Saves an existing node.
     #
     # @raise [RuntimeError]
@@ -380,41 +420,6 @@ module ActiveMedusa
 
       self.loaded = true
       @persisted = true
-    end
-
-    ##
-    # Populates an RDF::Graph for sending to Fedora.
-    #
-    # @param graph [RDF::Graph]
-    # @return [RDF::Graph] Input graph
-    def populate_graph(graph)
-      # add properties from subclass rdf_property definitions
-      @@rdf_properties.select{ |p| p[:class] == self.class }.each do |prop|
-        graph.delete([nil, RDF::URI(prop[:predicate]), nil])
-        value = send(prop[:name])
-        case prop[:type].to_sym
-          when :boolean
-            if value != nil
-              value = ['true', '1'].include?(value.to_s) ? 'true' : 'false'
-            end
-          when :anyURI
-            value = RDF::URI(value)
-          else
-            value = value.to_s
-        end
-        graph << RDF::Statement.new(
-            RDF::URI(), RDF::URI(prop[:predicate]), value) if value.present?
-      end
-
-      # add properties from subclass belongs_to relationships
-      @belongs_to.each do |entity_name, entity|
-        predicate = self.class.get_belongs_to_defs.
-            select{ |d| d[:entity] == entity_name.to_s }.first[:predicate]
-        graph.delete([nil, RDF::URI(predicate), nil])
-        graph << RDF::Statement.new(
-            RDF::URI(), RDF::URI(predicate), RDF::URI(entity.repository_url)) if entity
-      end
-      graph
     end
 
   end
