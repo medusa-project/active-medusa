@@ -44,8 +44,6 @@ module ActiveMedusa
     # @return [Integer]
     #
     def count
-      #@start = 0 TODO: do this?
-      #@limit = 0
       self.to_a.total_length
     end
 
