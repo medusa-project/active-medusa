@@ -9,6 +9,10 @@ module ActiveMedusa
   class Container < Base
     include Querying
 
+    # @!attribute binaries_to_add
+    #   @return [Set]
+    attr_reader :binaries_to_add
+
     # @!attribute score
     #   @return [Float] Float populated by `ActiveMedusa::Relation`; not
     #           persisted.
@@ -22,6 +26,7 @@ module ActiveMedusa
     # @param params [Hash]
     #
     def initialize(params = {})
+      @binaries_to_add = Set.new
       @rdf_graph = new_rdf_graph
       super
     end

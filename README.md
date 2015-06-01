@@ -18,10 +18,15 @@ sections of the Fedora wiki for more information.)
   or use existing ones.
 * Customizable Solr schema. Although some extra fields are required, their
   names are up to you.
-* Supports both binary and container nodes.
+* Supports binary and container nodes.
 * Supports "belongs-to" and "has-many" relationships between entities.
 * No-configuration support for node hierarchy traversal.
-* Relatively simple and lightweight.
+
+# Limitations
+
+* No cascading
+* No uniquing
+* Can only set references on the owned side
 
 ## Installation
 
@@ -92,8 +97,8 @@ end
 # item.rb
 class Item < ActiveMedusa::Container
   entity_class_uri 'http://example.org/Item'
-  has_many :bytestreams
   has_many :items
+  has_binaries :bytestreams
   belongs_to :collection, solr_field: 'collection_s'
   belongs_to :item, solr_field: 'parent_s', name: 'parent'
   rdf_property :full_text,
@@ -132,14 +137,14 @@ to use the properties in `create` and `update`.
 
 ### Defining Relationships
 
-Using the `has_many` and `belongs_to` methods, the example above specifies
-that collections can contain zero or more items; items can contain zero or more
-bytestreams; and items can also contain zero or more items (as in aggregations,
-a.k.a. compound objects). Note that both sides of the relationship must be
-specified, so for every `has_many` on an owning entity, there must be a
-`belongs_to` on the owned entity. The `belongs_to` side also requires a
-`:predicate` option that specifies what RDF predicate to use to store the
-relationship in Fedora.
+Using the `has_many`, `belongs_to`, and `has_binaries` methods, the example
+above specifies that collections can contain zero or more items; items can
+contain zero or more bytestreams; and items can also contain zero or more items
+(as in aggregations, a.k.a. compound objects). Note that both sides of the
+relationship must be specified, so for every `has_many` on an owning entity,
+there must be a `belongs_to` on the owned entity. The `belongs_to` side also
+requires a `:predicate` option that specifies what RDF predicate to use to
+store the relationship in Fedora, as does `has_binaries`.
 
 ## Creating Entities
 

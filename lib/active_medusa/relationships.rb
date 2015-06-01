@@ -14,7 +14,7 @@ module ActiveMedusa
       @@associations = Set.new
 
       ##
-      # @return Set of `ActiveMedusa::Association`s
+      # @return [Set<ActiveMedusa::Association>]
       #
       def associations
         @@associations
@@ -63,10 +63,41 @@ module ActiveMedusa
 
         # Define a setter method to access the target of the relationship
         define_method("#{options[:name] || entity_class.to_s.underscore}=") do |owner|
-          raise 'Owner must descend from ActiveMedusa::Base' unless
-              owner.kind_of?(ActiveMedusa::Base)
-          # store a reference to the owner
-          @belongs_to[entity_class] = owner
+          raise 'Owner must descend from ActiveMedusa::Container' unless
+              owner.kind_of?(ActiveMedusa::Container)
+          @belongs_to[entity_class] = owner # store a reference to the owner
+
+          if self.kind_of?(ActiveMedusa::Binary)
+            owner.binaries_to_add << self
+          end
+        end
+      end
+
+      ##
+      # @param entities [Symbol] Pluralized `ActiveMedusa::Binary` subclass name
+      # @param options [Hash] Hash with the following required keys:
+      #                `:predicate`
+      #
+      def has_binaries(entities, options)
+        entity_class = Object.const_get(entities.to_s.singularize.camelize)
+        self_ = self
+        self.class.instance_eval do
+          @@associations << ActiveMedusa::Association.new(
+              name: entities.to_s,
+              rdf_predicate: options[:predicate],
+              source_class: self_,
+              type: ActiveMedusa::Association::Type::HAS_MANY,
+              target_class: entity_class)
+        end
+
+        ##
+        # @param entities [String|Symbol]
+        # @return [Set]
+        #
+        define_method(entities) do
+          @has_binaries[entity_class] = Set.new unless
+              @has_binaries[entity_class]
+          @has_binaries[entity_class]
         end
       end
 

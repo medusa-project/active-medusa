@@ -64,7 +64,7 @@ module ActiveMedusa
     # @return [Class]
     #
     def self.class_of_predicate(predicate)
-      # load all entities in order to populate @@entity_class_uris
+      # load all entity classes in order to populate @@entity_class_uris
       Dir.glob(File.join(Configuration.instance.entity_path, '*.rb')).each do |file|
         require_relative(file)
       end
@@ -149,6 +149,7 @@ module ActiveMedusa
     #
     def initialize(params = {})
       @belongs_to = {} # Class => entity instance TODO: move to Relationships
+      @has_binaries = {} # Class => Set TODO: move to Relationships
       @has_many = {} # Class => ActiveMedusa::Relation TODO: move to Relationships
       @destroyed = false
       @loaded = false
@@ -254,7 +255,7 @@ module ActiveMedusa
       raise 'Validation error' unless self.valid?
       raise 'Cannot save a destroyed object.' if self.destroyed?
       run_callbacks :save do
-        if self.uuid
+        if self.repository_url
           save_existing
         elsif self.parent_url
           save_new
@@ -350,9 +351,29 @@ module ActiveMedusa
             a.type == ActiveMedusa::Association::Type::BELONGS_TO and
             a.target_class == entity.class }.first.rdf_predicate
         graph.delete([nil, RDF::URI(predicate), nil])
-        graph << RDF::Statement.new(
-            RDF::URI(), RDF::URI(predicate), RDF::URI(entity.repository_url)) if entity
+        graph << [RDF::URI(), RDF::URI(predicate),
+                  RDF::URI(entity.repository_url)] if entity
       end
+
+      # add dependent binaries
+      self.class.associations.
+          select{ |a| a.source_class == self.class and
+              a.type == ActiveMedusa::Association::Type::HAS_MANY and
+              a.target_class.new.kind_of?(ActiveMedusa::Binary) }.map(&:name).each do |method|
+        (self.send(method) + self.binaries_to_add).each do |entity|
+          predicate = self.class.associations.
+              select{ |a| a.source_class == self.class and
+              a.type == ActiveMedusa::Association::Type::HAS_MANY and
+              a.target_class == entity.class }.first.rdf_predicate
+          if entity.repository_url
+            graph.delete([nil, RDF::URI(predicate), entity.repository_url])
+            graph << [RDF::URI(), RDF::URI(predicate),
+                      RDF::URI(entity.repository_url)]
+          end
+        end
+        self.binaries_to_add.clear
+      end
+
       graph
     end
 
@@ -414,6 +435,19 @@ module ActiveMedusa
           value = value.to_s
         end
         send("#{prop[:name]}=", value)
+      end
+
+      # add dependent binaries
+      self.class.associations.
+          select{ |a| a.source_class == self.class and
+              a.type == ActiveMedusa::Association::Type::HAS_MANY and
+              a.target_class.kind_of?(ActiveMedusa::Binary) }.each do |assoc|
+        graph.each_statement do |st|
+          if st.predicate.to_s == assoc.rdf_predicate
+            @has_binaries[assoc.target_class] <<
+                entity_class.new(repository_url: st.object.to_s) # TODO: initialize this properly
+          end
+        end
       end
 
       self.loaded = true
