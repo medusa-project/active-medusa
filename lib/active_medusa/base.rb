@@ -144,9 +144,7 @@ module ActiveMedusa
     # @param params [Hash]
     #
     def initialize(params = {})
-      @belongs_to = {} # Class => entity instance TODO: move to Relationships
-      @has_binaries = {} # Class => Set TODO: move to Relationships
-      @has_many = {} # Class => ActiveMedusa::Relation TODO: move to Relationships
+      super()
       @destroyed = false
       @loaded = false
       @persisted = false
@@ -341,7 +339,7 @@ module ActiveMedusa
       end
 
       # add properties from subclass belongs_to relationships
-      @belongs_to.each do |entity_name, entity|
+      belongs_to_instances.each do |entity_name, entity|
         predicate = self.class.associations.
             select{ |a| a.source_class == self.class and
             a.type == ActiveMedusa::Association::Type::BELONGS_TO and
@@ -438,10 +436,10 @@ module ActiveMedusa
           select{ |a| a.source_class == self.class and
               a.type == ActiveMedusa::Association::Type::HAS_MANY and
               a.target_class.new.kind_of?(ActiveMedusa::Binary) }.each do |assoc|
-        @has_binaries[assoc.target_class] ||= Set.new
+        has_binary_instances[assoc.target_class] ||= Set.new
         graph.each_statement do |st|
           if st.predicate.to_s == assoc.rdf_predicate
-            @has_binaries[assoc.target_class] <<
+            has_binary_instances[assoc.target_class] <<
                 assoc.target_class.new(repository_url: st.object.to_s) # TODO: initialize this properly
           end
         end

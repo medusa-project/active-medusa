@@ -2,6 +2,16 @@ module ActiveMedusa
 
   module Relationships
 
+    attr_reader :belongs_to_instances
+    attr_reader :has_binary_instances
+    attr_reader :has_many_instances
+
+    def initialize
+      @belongs_to_instances = {} # Class => entity instance
+      @has_binary_instances = {} # Class => Set
+      @has_many_instances = {} # Class => ActiveMedusa::Relation
+    end
+
     def self.included(base)
       base.extend ClassMethods
     end
@@ -44,7 +54,7 @@ module ActiveMedusa
 
         # Define a lazy getter method to access the target of the relationship
         define_method(options[:name] || entity_class.to_s.underscore) do
-          owner = @belongs_to[entity_class]
+          owner = @belongs_to_instances[entity_class]
           unless owner
             association = @@associations.
                 select{ |a| a.source_class == self.class and
@@ -53,7 +63,7 @@ module ActiveMedusa
             self.rdf_graph.each_statement do |st|
               if st.predicate.to_s == association.rdf_predicate
                 owner = association.target_class.find_by_uri(st.object.to_s)
-                @belongs_to[entity_class] = owner
+                @belongs_to_instances[entity_class] = owner
                 break
               end
             end
@@ -65,7 +75,7 @@ module ActiveMedusa
         define_method("#{options[:name] || entity_class.to_s.underscore}=") do |owner|
           raise 'Owner must descend from ActiveMedusa::Container' unless
               owner.kind_of?(ActiveMedusa::Container)
-          @belongs_to[entity_class] = owner # store a reference to the owner
+          @belongs_to_instances[entity_class] = owner # store a reference to the owner
 
           if self.kind_of?(ActiveMedusa::Binary)
             owner.binaries_to_add << self
@@ -100,8 +110,8 @@ module ActiveMedusa
           # @return [Set]
           #
           define_method(entities) do
-            @has_binaries[entity_class] ||= Set.new
-            @has_binaries[entity_class]
+            @has_binary_instances[entity_class] ||= Set.new
+            @has_binary_instances[entity_class]
           end
         else
           ##
@@ -109,14 +119,14 @@ module ActiveMedusa
           # @return [ActiveMedusa::Relation]
           #
           define_method(entities) do
-            owned = @has_many[entity_class] # Class => Relation
+            owned = @has_many_instances[entity_class] # Class => Relation
             unless owned
               solr_rel_field = entity_class.associations.
                   select{ |a| a.source_class == self.class and
                   a.target_class == entity_class and
                   a.type == ActiveMedusa::Association::Type::HAS_MANY }.first.solr_field
               owned = entity_class.where(solr_rel_field => self.repository_url)
-              @has_many[entity_class] = owned
+              @has_many_instances[entity_class] = owned
             end
             owned
           end
