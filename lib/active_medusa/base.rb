@@ -204,9 +204,8 @@ module ActiveMedusa
     # Handles `find_by_x` calls. # TODO: move this to Querying
     #
     def method_missing(name, *args, &block)
-      name_s = name.to_s
       if self.respond_to?(name)
-        prop = @@rdf_properties.select{ |p| p[:name] == name_s }.first
+        prop = @@rdf_properties.select{ |p| p[:name] == name.to_s }.first
         if prop
           return self.where(prop[:solr_field] => args[0]).
               use_transaction_url(args[1]).first
