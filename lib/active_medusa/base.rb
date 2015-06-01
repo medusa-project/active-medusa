@@ -441,11 +441,12 @@ module ActiveMedusa
       self.class.associations.
           select{ |a| a.source_class == self.class and
               a.type == ActiveMedusa::Association::Type::HAS_MANY and
-              a.target_class.kind_of?(ActiveMedusa::Binary) }.each do |assoc|
+              a.target_class.new.kind_of?(ActiveMedusa::Binary) }.each do |assoc|
+        @has_binaries[assoc.target_class] ||= Set.new
         graph.each_statement do |st|
           if st.predicate.to_s == assoc.rdf_predicate
             @has_binaries[assoc.target_class] <<
-                entity_class.new(repository_url: st.object.to_s) # TODO: initialize this properly
+                assoc.target_class.new(repository_url: st.object.to_s) # TODO: initialize this properly
           end
         end
       end
