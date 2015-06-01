@@ -27,6 +27,7 @@ sections of the Fedora wiki for more information.)
 * No cascading
 * No uniquing
 * Can only set references on the owned side
+* Probably a lot more
 
 ## Installation
 
@@ -97,9 +98,11 @@ end
 class Item < ActiveMedusa::Container
   entity_class_uri 'http://example.org/Item'
   has_many :items
-  has_binaries :bytestreams
-  belongs_to :collection, solr_field: 'collection_s'
-  belongs_to :item, solr_field: 'parent_s', name: 'parent'
+  has_many :bytestreams, predicate: 'http://example.org/hasBytestream'
+  belongs_to :collection, predicate: 'http://example.org/isMemberOf',
+             solr_field: :collection_s
+  belongs_to :item, predicate: 'http://example.org/isChildOf',
+             solr_field: 'parent_s', name: 'parent'
   rdf_property :full_text,
                xs_type: :string,
                predicate: 'http://example.org/fullText',
@@ -136,18 +139,16 @@ to use the properties in `create` and `update`.
 
 ### Defining Relationships
 
-Using the `has_many`, `belongs_to`, and `has_binaries` methods, the example
-above specifies that collections can contain zero or more items; items can
-contain zero or more bytestreams; and items can also contain zero or more items
-(as in aggregations, a.k.a. compound objects). Note that both sides of the
-relationship must be specified, so for every `has_many` on an owning entity,
-there must be a `belongs_to` on the owned entity. The `belongs_to` side also
-requires a `:predicate` option that specifies what RDF predicate to use to
-store the relationship in Fedora, as does `has_binaries`.
+Using the `has_many` and `belongs_to` methods, the example above specifies that
+collections can contain zero or more items; items can contain zero or more
+bytestreams; and items can also contain zero or more items (as in aggregations,
+a.k.a. compound objects). Note that both sides of the relationship must be
+specified, so for every `has_many` on an owning entity, there must be a
+`belongs_to` on the owned entity. The `belongs_to` side also requires a
+`:predicate` option that specifies what RDF predicate to use to store the
+relationship in Fedora, as does `has_many` when it refers to binaries.
 
 ## Creating Entities
-
-TODO: creating entities as children of other entities
 
 `Item.new` will create an `Item` object, but it will not be saved to the
 repository until `save` is called on it.
@@ -161,12 +162,37 @@ item = Item.new(parent_url: 'http://url/of/parent/container')
 item.save!
 ```
 
+Or, if you are not sure of its parent's URL, but you have its parent:
+
+```ruby
+parent = Item.find(..)
+new_item = Item.new(parent_url: parent_item.repository_url)
+new_item.save!
+```
+
 `Item.create` will create and save an object immediately.
 
 Both of these methods accept a hash of properties as an argument.
 
 Bang versions (!) of `create` and `save` are available that will raise errors
 if anything goes wrong.
+
+### Establishing Relationships
+
+Establishing relationships between two new entities is a little awkward because
+both sides need to be saved first, in order to acquire repository URIs to use
+in the RDF triple that establishes the relationship. The process would go
+something like this:
+
+    item = Item.new(..)
+    item.save!
+    collection = Collection.new(..)
+    collection.save!
+    item.collection = collection
+    item.save!
+
+As of the current version, relationships must be set on the owned side. Doing
+something like `collection.items << item` is not possible.
 
 ### Requesting a Slug 🐌
 
@@ -337,8 +363,6 @@ call `save` on an already-saved binary resource, A binary entity's RDF graph
 is available via its `rdf_graph` accessor, just like a container.
 
 ### Accessing Binary Nodes
-
-TODO: update this
 
 Binary nodes are not indexed in Solr. If you want to be able to retrieve them
 later via ActiveMedusa, you need to make sure they are accessible via a

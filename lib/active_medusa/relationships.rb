@@ -74,11 +74,15 @@ module ActiveMedusa
       end
 
       ##
-      # @param entities [Symbol] Pluralized `ActiveMedusa::Binary` subclass name
-      # @param options [Hash] Hash with the following required keys:
-      #                `:predicate`
+      # @param entities [Symbol] Pluralized `ActiveMedusa::Container` subclass
+      #                 name
+      # @param options [Hash] Hash with the following keys: :predicate (only
+      #                for binaries)
       #
-      def has_binaries(entities, options)
+      def has_many(entities, options = {})
+        raise 'Cannot define a `has_many` relationship named `children`.' if
+            entities.to_s == 'children'
+
         entity_class = Object.const_get(entities.to_s.singularize.camelize)
         self_ = self
         self.class.instance_eval do
@@ -90,49 +94,32 @@ module ActiveMedusa
               target_class: entity_class)
         end
 
-        ##
-        # @param entities [String|Symbol]
-        # @return [Set]
-        #
-        define_method(entities) do
-          @has_binaries[entity_class] ||= Set.new
-          @has_binaries[entity_class]
-        end
-      end
-
-      ##
-      # @param entities [Symbol] Pluralized `ActiveMedusa::Container` subclass
-      #                 name
-      #
-      def has_many(entities)
-        raise 'Cannot define a `has_many` relationship named `children`.' if
-            entities.to_s == 'children'
-
-        entity_class = Object.const_get(entities.to_s.singularize.camelize)
-        self_ = self
-        self.class.instance_eval do
-          @@associations << ActiveMedusa::Association.new(
-              name: entities.to_s,
-              source_class: self_,
-              type: ActiveMedusa::Association::Type::HAS_MANY,
-              target_class: entity_class)
-        end
-
-        ##
-        # @param entities [String|Symbol]
-        # @return [ActiveMedusa::Relation]
-        #
-        define_method(entities) do
-          owned = @has_many[entity_class] # Class => Relation
-          unless owned
-            solr_rel_field = entity_class.associations.
-                select{ |a| a.source_class == self.class and
-                a.target_class == entity_class and
-                a.type == ActiveMedusa::Association::Type::HAS_MANY }.first.solr_field
-            owned = entity_class.where(solr_rel_field => self.repository_url)
-            @has_many[entity_class] = owned
+        if entity_class.new.kind_of?(ActiveMedusa::Binary)
+          ##
+          # @param entities [String|Symbol]
+          # @return [Set]
+          #
+          define_method(entities) do
+            @has_binaries[entity_class] ||= Set.new
+            @has_binaries[entity_class]
           end
-          owned
+        else
+          ##
+          # @param entities [String|Symbol]
+          # @return [ActiveMedusa::Relation]
+          #
+          define_method(entities) do
+            owned = @has_many[entity_class] # Class => Relation
+            unless owned
+              solr_rel_field = entity_class.associations.
+                  select{ |a| a.source_class == self.class and
+                  a.target_class == entity_class and
+                  a.type == ActiveMedusa::Association::Type::HAS_MANY }.first.solr_field
+              owned = entity_class.where(solr_rel_field => self.repository_url)
+              @has_many[entity_class] = owned
+            end
+            owned
+          end
         end
       end
 
