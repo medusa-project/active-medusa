@@ -64,10 +64,6 @@ module ActiveMedusa
     # @return [Class]
     #
     def self.class_of_predicate(predicate)
-      # load all entity classes in order to populate @@entity_class_uris
-      Dir.glob(File.join(Configuration.instance.entity_path, '*.rb')).each do |file|
-        require_relative(file)
-      end
       d = @@entity_class_uris.select{ |u| u[:predicate] == predicate }.first
       d ? d[:class] : nil
     end

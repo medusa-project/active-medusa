@@ -52,7 +52,6 @@ ActiveMedusa needs to know some stuff about your setup. Tell it like this:
 
 ```ruby
 ActiveMedusa::Configuration.new do |config|
-  config.entity_path = File.join(Rails.root, 'app', 'models')
   config.fedora_url = 'http://localhost:8080/fcrepo/rest'
   config.logger = Rails.logger
   config.class_predicate = 'http://example.org/hasClass'

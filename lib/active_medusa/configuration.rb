@@ -7,7 +7,6 @@ module ActiveMedusa
 
     @@instance = nil
 
-    attr_accessor :entity_path
     attr_accessor :fedora_url
     attr_accessor :fedora_indexing_transformation
     attr_accessor :logger
