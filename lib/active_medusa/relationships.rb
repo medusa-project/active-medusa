@@ -95,8 +95,7 @@ module ActiveMedusa
         # @return [Set]
         #
         define_method(entities) do
-          @has_binaries[entity_class] = Set.new unless
-              @has_binaries[entity_class]
+          @has_binaries[entity_class] ||= Set.new
           @has_binaries[entity_class]
         end
       end
