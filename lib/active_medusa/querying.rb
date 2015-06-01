@@ -39,7 +39,8 @@ module ActiveMedusa
       # @return [ActiveMedusa::Relation]
       #
       def find_by_uri(uri, transaction_url = nil)
-        self.where(id: uri).use_transaction_url(transaction_url).first # TODO: don't need to do this through solr
+        self.where(Configuration.instance.solr_uri_field => uri).
+            use_transaction_url(transaction_url).first # TODO: don't need to do this through solr
       end
 
       ##

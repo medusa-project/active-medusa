@@ -14,7 +14,7 @@ module ActiveMedusa
     attr_accessor :class_predicate # must be indexed as :solr_class_field
     attr_accessor :solr_core
     attr_accessor :solr_class_field # must originate from :class_predicate
-    attr_accessor :solr_id_field
+    attr_accessor :solr_uri_field
     attr_accessor :solr_more_like_this_endpoint
     attr_accessor :solr_parent_id_field
     attr_accessor :solr_uuid_field
@@ -28,7 +28,7 @@ module ActiveMedusa
 
     def initialize
       self.fedora_indexing_transformation = 'default'
-      self.solr_id_field = :id
+      self.solr_uri_field = :id
       self.solr_more_like_this_endpoint = '/mlt'
       yield self
       @@instance = self
