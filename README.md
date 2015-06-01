@@ -166,7 +166,7 @@ Or, if you are not sure of its parent's URL, but you have its parent:
 
 ```ruby
 parent = Item.find(..)
-new_item = Item.new(parent_url: parent_item.repository_url)
+new_item = Item.new(parent_url: parent.repository_url)
 new_item.save!
 ```
 
