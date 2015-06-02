@@ -128,7 +128,7 @@ module ActiveMedusa
     end
 
     ##
-    # @param [String] Transaction URL
+    # @param [String] url Transaction URL
     #
     def use_transaction_url(url)
       self.transaction_url = url

@@ -14,7 +14,7 @@ module ActiveMedusa
       ##
       # Creates a transaction.
       #
-      # @returns [String] Transaction base URL
+      # @return [String] Transaction base URL
       #
       def create_transaction(http_client)
         repository_url = Configuration.instance.fedora_url.chomp('/')
