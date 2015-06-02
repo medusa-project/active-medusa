@@ -2,6 +2,11 @@ $LOAD_PATH.unshift File.expand_path('../../lib', __FILE__)
 require 'active_medusa'
 require 'minitest/autorun'
 
+autoload :Bytestream, './fixtures/bytestream'
+autoload :Collection, './fixtures/collection'
+autoload :Item, './fixtures/item'
+autoload :Seeder, './fixtures/seeder'
+
 ActiveMedusa::Configuration.new do |config|
   config.fedora_url = 'http://localhost:8080/fedora/rest'
   config.fedora_indexing_transformation = 'activemedusa'
