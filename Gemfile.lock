@@ -7,7 +7,7 @@ GIT
 PATH
   remote: .
   specs:
-    active-medusa (0.1.0)
+    active-medusa (0.0.0)
       activemodel
       activesupport
       globalid
