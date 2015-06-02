@@ -1,3 +1,5 @@
+# ActiveMedusa
+
 ActiveMedusa provides a simple ActiveRecord-like interface to a Fedora 4
 repository, using Solr for lookup and querying. It relies on a strategy like
 [fcrepo-message-consumer](https://github.com/fcrepo4/fcrepo-message-consumer)
@@ -204,12 +206,14 @@ both sides need to be saved first, in order to acquire repository URIs to use
 in the RDF triple that establishes the relationship. The process would go
 something like this:
 
-    item = Item.new(..)
-    item.save!
-    collection = Collection.new(..)
-    collection.save!
-    item.collection = collection
-    item.save!
+```ruby
+item = Item.new(..)
+item.save!
+collection = Collection.new(..)
+collection.save!
+item.collection = collection
+item.save!
+```
 
 As of the current version, relationships must be set on the owned side. Doing
 something like `collection.items << item` is not possible.
