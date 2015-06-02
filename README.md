@@ -148,6 +148,26 @@ specified, so for every `has_many` on an owning entity, there must be a
 `:predicate` option that specifies what RDF predicate to use to store the
 relationship in Fedora, as does `has_many` when it refers to binaries.
 
+*Note: If any of your entity classes reside in another namespace, you will need
+to add a `class_name` option to your relationship definitions:*
+
+```ruby
+# collection.rb
+module Entities
+  class Collection < ActiveMedusa::Container
+    has_many :items, class_name: 'Entities::Item'
+  end
+end
+
+# item.rb
+module Entities
+  class Item < ActiveMedusa::Container
+    belongs_to :collection, predicate: 'http://example.org/isMemberOf',
+               solr_field: :collection_s, class_name: 'Entities::Collection'
+  end
+end
+```
+
 ## Creating Entities
 
 `Item.new` will create an `Item` object, but it will not be saved to the

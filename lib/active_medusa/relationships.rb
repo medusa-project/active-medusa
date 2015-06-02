@@ -1,3 +1,5 @@
+require 'set'
+
 module ActiveMedusa
 
   module Relationships
@@ -34,13 +36,18 @@ module ActiveMedusa
       # @param entity [Symbol] `ActiveMedusa::Base` subclass name
       # @param options [Hash] Hash with the following required keys:
       #                `:predicate`, `:solr_field`; and the following optional
-      #                keys: `:name` (specifies the name of the accessor method)
+      #                keys: `:name` (specifies the name of the accessor
+      #                 method), `:class_name`
       #
       def belongs_to(entity, options)
         raise 'Cannot define a `belongs_to` relationship named `parent`.' if
             [options[:name], entity].map{ |e| e.to_s.downcase }.include?('parent')
 
-        entity_class = Object.const_get(entity.to_s.camelize)
+        if options[:class_name]
+          entity_class = Object.const_get(options[:class_name].to_s)
+        else
+          entity_class = Object.const_get(entity.to_s.camelize)
+        end
         self_ = self
         self.class.instance_eval do
           @@associations << ActiveMedusa::Association.new(
@@ -87,13 +94,17 @@ module ActiveMedusa
       # @param entities [Symbol] Pluralized `ActiveMedusa::Container` subclass
       #                 name
       # @param options [Hash] Hash with the following keys: :predicate (only
-      #                for binaries)
+      #                for binaries), :class_name (optional)
       #
       def has_many(entities, options = {})
         raise 'Cannot define a `has_many` relationship named `children`.' if
             entities.to_s == 'children'
 
-        entity_class = Object.const_get(entities.to_s.singularize.camelize)
+        if options[:class_name]
+          entity_class = Object.const_get(options[:class_name].to_s)
+        else
+          entity_class = Object.const_get(entities.to_s.singularize.camelize)
+        end
         self_ = self
         self.class.instance_eval do
           @@associations << ActiveMedusa::Association.new(
