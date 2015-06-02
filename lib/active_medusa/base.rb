@@ -23,7 +23,7 @@ module ActiveMedusa
     include Relationships
     include Transactions
 
-    define_model_callbacks :create, :delete, :load, :save, :update,
+    define_model_callbacks :create, :destroy, :load, :save, :update,
                            only: [:after, :before]
 
     @@entity_class_uris = Set.new
@@ -174,7 +174,7 @@ module ActiveMedusa
       if @persisted and !@destroyed
         url = transactional_url(self.repository_url)
         if url
-          run_callbacks :delete do
+          run_callbacks :destroy do
             url = url.chomp('/')
             client = Fedora.client
             client.delete(url)

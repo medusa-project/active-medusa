@@ -513,12 +513,12 @@ frameworks are untested.)
 Your entities can use the following `ActiveModel::Model` callbacks:
 
 * `before_create`
-* `before_delete`
+* `before_destroy`
 * `before_load`
 * `before_save`
 * `before_update`
 * `after_create`
-* `after_delete`
+* `after_destroy`
 * `after_load`
 * `after_save`
 * `after_update`
