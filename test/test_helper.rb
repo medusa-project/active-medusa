@@ -8,7 +8,9 @@ ActiveMedusa::Configuration.new do |config|
   config.class_predicate = 'http://example.org/hasClass'
   config.solr_url = 'http://localhost:8983/solr'
   config.solr_core = 'activemedusa'
+  config.solr_more_like_this_endpoint = '/mlt'
   config.solr_class_field = :class_s
+  config.solr_uri_field = :id
   config.solr_uuid_field = :uuid_s
   config.solr_default_search_field = :searchall_txt
   config.solr_facet_fields = [
