@@ -1,9 +1,6 @@
 $LOAD_PATH.unshift File.expand_path('../../lib', __FILE__)
 require 'active_medusa'
 require 'minitest/autorun'
-require 'minitest/reporters'
-
-MiniTest::Reporters.use!
 
 ActiveMedusa::Configuration.new do |config|
   config.fedora_url = 'http://localhost:8080/fedora/rest'
