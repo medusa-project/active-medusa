@@ -39,7 +39,8 @@ module ActiveMedusa
     end
 
     def repository_metadata_url
-      transactional_url(self.repository_url).chomp('/')
+      self.repository_url ?
+          transactional_url(self.repository_url).chomp('/') : nil
     end
 
     protected
