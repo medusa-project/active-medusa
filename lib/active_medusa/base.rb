@@ -205,9 +205,10 @@ module ActiveMedusa
     #
     def method_missing(name, *args, &block)
       if self.respond_to?(name)
-        prop = @@rdf_properties.select{ |p| p[:name] == name.to_s }.first
+        prop = @@rdf_properties.select{ |p| p[:class] == self.class and
+            p[:name].to_s == name.to_s.gsub(/find_by_/, '') }.first
         if prop
-          return self.where(prop[:solr_field] => args[0]).
+          return self.class.where(prop[:solr_field] => args[0]).
               use_transaction_url(args[1]).first
         end
       end
@@ -231,7 +232,8 @@ module ActiveMedusa
     def respond_to?(sym, include_private = false)
       sym_s = sym.to_s
       if sym_s.start_with?('find_by_') and @@rdf_properties.
-            select{ |p| p[:class] == self.class and p[:name].to_s == sym_s }.any?
+          select{ |p| p[:class] == self.class and
+              p[:name].to_s == sym_s.gsub(/find_by_/, '') }.any?
         return true
       end
       super
