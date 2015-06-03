@@ -381,7 +381,21 @@ module ActiveMedusa
     # @raise [RuntimeError]
     #
     def save_existing
-      self.rdf_graph = populate_graph(fetch_current_graph)
+      populate_graph(self.rdf_graph)
+
+      # update last-modified triple so fedora will accept it
+      last_modified_pred = 'http://fedora.info/definitions/v4/repository#lastModified'
+      current_graph = fetch_current_graph
+      if current_graph
+        current_last_modified = current_graph.any_object(last_modified_pred).to_s
+        self.rdf_graph.each_statement do |st|
+          if st.predicate.to_s == last_modified_pred
+            st.object = current_last_modified
+            break
+          end
+        end
+      end
+
       url = transactional_url(self.repository_metadata_url)
       body = self.rdf_graph.to_ttl
       headers = { 'Content-Type' => 'text/turtle' }
