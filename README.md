@@ -74,9 +74,24 @@ end
 (If you are using Rails, you would put this in
 `config/initializers/active_medusa.rb`, and then restart your application.)
 
+### Configuring Fedora to populate Solr
+
+Fedora needs to be configured to index its content in Solr. (See the
+[External Search]
+(https://wiki.duraspace.org/display/FEDORA41/External+Search) and [Setup Camel
+Message Integrations]
+(https://wiki.duraspace.org/display/FEDORA41/Setup+Camel+Message+Integrations)
+sections of the Fedora wiki). Setting this up is beyond the scope of
+ActiveMedusa; but keep in mind that any Solr fields referred to in your `ActiveMedusa::Configuration` object, as well as any referred to in your
+entities (see below), need to exist in Solr and be accounted for in your
+indexing transformation. In the example above, `searchall_txt` is presumably a
+dynamic `copyField` that the indexing transformation does not need to worry
+about, and likewise the `*_facet` fields; but all of the rest need to exist,
+either as regular or dynamic fields.
+
 ## Defining Entities
 
-Let's declare some entity ("model") classes. `Collection` and `Item` will
+Let's declare some entity/model classes. `Collection` and `Item` will
 correspond to Fedora 4 container nodes, and `Bytestream` will correspond to
 Fedora binary nodes. These are all common entities found in many repositories,
 but you could change the terminology to `Series` instead of `Collection`,
@@ -128,16 +143,17 @@ object of a triple whose predicate is the value of
 ### Defining Properties
 
 `rdf_property` is a convenience method that maps entity properties to an
-instance's RDF graph and creates accessor and finder methods for them.
+instance's RDF graph and creates accessor and finder methods for them. It also
+enables bonus features like `find_by_x`, auto-generated accessors and ability
+to use the properties in `create` and `update` calls.
 
 `rdf_property` predicates must be unique and can only be used in one triple per
 entity graph.
 
 You do not need to define all, or any, of an entity's properties with
 `rdf_property`. If you prefer, you can manually mutate an instance's
-`RDF::Graph` instance, accessible via `rdf_graph`. `rdf_property` just gives
-you some nice bonus features like `find_by_x`, automatic accessors, and ability
-to use the properties in `create` and `update`.
+`RDF::Graph` instance, accessible via `rdf_graph`. But in that case, you
+wouldn't get the bonus features.
 
 ### Defining Relationships
 
@@ -150,8 +166,8 @@ specified, so for every `has_many` on an owning entity, there must be a
 `:predicate` option that specifies what RDF predicate to use to store the
 relationship in Fedora, as does `has_many` when it refers to binaries.
 
-*Note: If any of your entity classes reside in another namespace, you will need
-to add a `class_name` option to your relationship definitions:*
+*Note: If any of your entity classes reside in a namespace, you will need to
+add a `class_name` option to your relationship definitions:*
 
 ```ruby
 # collection.rb
@@ -187,8 +203,8 @@ item.save!
 Or, if you are not sure of its parent's URL, but you have its parent:
 
 ```ruby
-parent = Item.find(..)
-new_item = Item.new(parent_url: parent.repository_url)
+parent_item = Item.find(..)
+new_item = Item.new(parent_url: parent_item.repository_url)
 new_item.save!
 ```
 
@@ -410,7 +426,7 @@ which will rarely be the case. An ugly way of getting around this is to `sleep`
 for a bit after saving an entity to wait for Solr to catch up - hoping that it
 does in time. But it's best to simply not try to do it.*
 
-*Note 3: Binary entities are not searchable (see **Binary Entities**).
+*Note 3: Binary entities are not searchable (see **Binary Entities**).*
 
 ```ruby
 items = Item.all.where(some_rdf_property: 'cats').where('arbitrary Solr query')
@@ -485,16 +501,30 @@ query by similarity:
 item = Item.find(id).more_like_this.limit(5)
 ```
 
-### Transactions
+## Transactions
+
+### CRUD
+
+Simply wrap any CRUD operation(s) inside a block:
+
+```ruby
+ActiveMedusa::Base.transaction do |tx_url|
+  # Any code present here will occur within a transaction.
+  # Raising an error will roll back the transaction.
+  # Otherwise, it will commit automatically when the block ends.
+end
+```
+
+### Querying
 
 You can query within a transaction using the `use_transaction_url` method of
 `ActiveMedusa::Relation`.
 
 ```ruby
-Item.all.use_transaction_url(url).where('..')
+ActiveMedusa::Base.transaction do |tx_url|
+  Item.all.use_transaction_url(tx_url).where('..')
+end
 ```
-
-TODO: transactions with create, save, update, delete
 
 ## Validation
 
