@@ -65,6 +65,7 @@ module ActiveMedusa
         end
         self.repository_url = nontransactional_url(response.header['Location'].first)
         self.requested_slug = nil
+        self.reload!
       end
     end
 
