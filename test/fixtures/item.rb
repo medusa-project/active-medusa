@@ -21,4 +21,55 @@ class Item < ActiveMedusa::Container
                xs_type: :boolean,
                predicate: 'http://example.org/isPublished',
                solr_field: 'published_b'
+
+  before_create :do_before_create
+  after_create :do_after_create
+  before_destroy :do_before_destroy
+  after_destroy :do_after_destroy
+  before_load :do_before_load
+  after_load :do_after_load
+  before_save :do_before_save
+  after_save :do_after_save
+  before_update :do_before_update
+  after_update :do_after_update
+
+  def do_before_create
+    @before_create_called = true
+  end
+
+  def do_after_create
+    @after_create_called = true
+  end
+
+  def do_before_destroy
+    @before_destroy_called = true
+  end
+
+  def do_after_destroy
+    @after_destroy_called = true
+  end
+
+  def do_before_load
+    @before_load_called = true
+  end
+
+  def do_after_load
+    @after_load_called = true
+  end
+
+  def do_before_save
+    @before_save_called = true
+  end
+
+  def do_after_save
+    @after_save_called = true
+  end
+
+  def do_before_update
+    @before_update_called = true
+  end
+
+  def do_after_update
+    @after_update_called = true
+  end
 end
