@@ -40,8 +40,8 @@ module ActiveMedusa
     #
     def save_new
       run_callbacks :create do
-        response = nil
         begin
+          response = nil
           if self.upload_pathname
             File.open(self.upload_pathname) do |file|
               filename = File.basename(self.upload_pathname)
@@ -70,6 +70,7 @@ module ActiveMedusa
           end
           self.repository_url = nontransactional_url(
               response.header['Location'].first)
+          @persisted = true
           # save metadata
           save_existing
         rescue HTTPClient::BadResponseError => e

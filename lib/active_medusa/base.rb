@@ -258,7 +258,6 @@ module ActiveMedusa
           raise 'UUID and container URL are both nil. One or the other is '\
           'required.'
         end
-        @persisted = true
       end
     end
 
