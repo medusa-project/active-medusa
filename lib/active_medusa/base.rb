@@ -303,15 +303,19 @@ module ActiveMedusa
 
     protected
 
+    ##
+    # @return [RDF::Graph,nil] The current graph, or `nil` if there is none.
+    #
     def fetch_current_graph
-      graph = RDF::Graph.new
       url = self.repository_metadata_url # already transactionalized
       if url
+        graph = RDF::Graph.new
         response = Fedora.client.get(
             url, nil, { 'Accept' => 'application/n-triples' })
         graph.from_ntriples(response.body)
+        return graph
       end
-      graph
+      nil
     end
 
     ##
