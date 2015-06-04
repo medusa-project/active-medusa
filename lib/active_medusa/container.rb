@@ -14,8 +14,8 @@ module ActiveMedusa
     attr_reader :binaries_to_add
 
     # @!attribute score
-    #   @return [Float] Float populated by `ActiveMedusa::Relation`; not
-    #           persisted.
+    #   @return [Float] Float populated by `ActiveMedusa::Relation` in the
+    #                   context of query results; not persisted.
     attr_accessor :score
 
     # @!attribute solr_representation
