@@ -11,7 +11,8 @@ module ActiveMedusa
     #   @return [String]
     attr_accessor :external_resource_url
 
-    # @!attribute media_type
+    # @!attribute media_type Should accompany `upload_pathname`. Will be
+    # ignored if `external_resource_url` is set instead.
     #   @return [String]
     attr_accessor :media_type
 
