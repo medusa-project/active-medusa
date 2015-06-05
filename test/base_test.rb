@@ -150,18 +150,6 @@ class BaseTest < Minitest::Test
     assert item.destroyed?
   end
 
-  # find_by_x
-
-  def test_find_by_x
-    item = Item.new
-    assert !item.respond_to?(:find_by_bogus)
-    assert item.respond_to?(:find_by_full_text)
-    assert_raises NoMethodError do
-      item.find_by_bogus('foo')
-    end
-    assert_nil item.find_by_full_text('foo')
-  end
-
   # persisted?
 
   def test_persisted

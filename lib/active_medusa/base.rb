@@ -101,6 +101,14 @@ module ActiveMedusa
     end
 
     ##
+    # @return [Set] Set of hashes with the following keys:
+    #        `:class`, `:name`, `:predicate`, `:xs_type`, `:solr_field`
+    #
+    def self.rdf_properties
+      @@rdf_properties
+    end
+
+    ##
     # Supplies a "property" keyword to subclasses which maps a Ruby property to
     # an RDF predicate and Solr field. Example:
     #
@@ -201,21 +209,6 @@ module ActiveMedusa
     end
 
     ##
-    # Handles `find_by_x` calls. # TODO: move this to Querying
-    #
-    def method_missing(name, *args, &block)
-      if self.respond_to?(name)
-        prop = @@rdf_properties.select{ |p| p[:class] == self.class and
-            p[:name].to_s == name.to_s.gsub(/find_by_/, '') }.first
-        if prop
-          return self.class.where(prop[:solr_field] => args[0]).
-              use_transaction_url(args[1]).first
-        end
-      end
-      super
-    end
-
-    ##
     # @return [Boolean]
     #
     def persisted?
@@ -224,19 +217,6 @@ module ActiveMedusa
 
     def reload!
       populate_from_graph(fetch_current_graph) if self.persisted?
-    end
-
-    ##
-    # Overridden to handle `find_by_x` calls.
-    #
-    def respond_to?(sym, include_private = false)
-      sym_s = sym.to_s
-      if sym_s.start_with?('find_by_') and @@rdf_properties.
-          select{ |p| p[:class] == self.class and
-              p[:name].to_s == sym_s.gsub(/find_by_/, '') }.any?
-        return true
-      end
-      super
     end
 
     ##

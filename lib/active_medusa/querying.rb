@@ -54,9 +54,21 @@ module ActiveMedusa
       end
 
       def method_missing(name, *args, &block)
+        name_s = name.to_s
+        # handle Relation-like calls
         if [:count, :first, :limit, :order, :start, :where].include?(name.to_sym)
-          Relation.new(self).send(name, *args, &block)
+          return Relation.new(self).send(name, *args, &block)
+        elsif name_s.start_with?('find_by_')
+          # handle find_by_x calls
+          prop = self.rdf_properties.
+              select{ |p| p[:class] == self and
+                p[:name].to_s == name_s.gsub(/find_by_/, '') }.first
+          if prop
+            return self.where(prop[:solr_field] => args[0]).
+                use_transaction_url(args[1]).first
+          end
         end
+        super
       end
 
       ##
@@ -67,8 +79,15 @@ module ActiveMedusa
       end
 
       def respond_to_missing?(method_name, include_private = false)
-        [:count, :first, :limit, :order, :start, :where].
-            include?(method_name.to_sym)
+        method_name_s = method_name.to_s
+        if %w(count first limit order start where).include?(method_name_s)
+          return true
+        elsif method_name_s.start_with?('find_by_') and
+            self.rdf_properties.select{ |p| p[:class] == self and
+                p[:name].to_s == method_name_s.gsub(/find_by_/, '') }.any?
+          return true
+        end
+        super
       end
 
     end
