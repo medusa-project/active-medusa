@@ -189,8 +189,6 @@ module ActiveMedusa
             client.delete("#{url}/fcr:tombstone") if also_tombstone
             @destroyed = true
             @persisted = false
-
-            # TODO: delete from dependent entities' graphs
           end
         end
         return true
