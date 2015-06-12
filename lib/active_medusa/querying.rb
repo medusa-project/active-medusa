@@ -35,22 +35,18 @@ module ActiveMedusa
 
       ##
       # @param uri [String] Fedora resource URI
-      # @param transaction_url [String]
       # @return [ActiveMedusa::Relation]
       #
-      def find_by_uri(uri, transaction_url = nil)
-        self.where(Configuration.instance.solr_uri_field => uri).
-            use_transaction_url(transaction_url).first # TODO: don't need to do this through solr
+      def find_by_uri(uri)
+        self.where(Configuration.instance.solr_uri_field => uri).first # TODO: don't need to do this through solr
       end
 
       ##
       # @param uuid [String]
-      # @param transaction_url [String]
       # @return [ActiveMedusa::Relation]
       #
-      def find_by_uuid(uuid, transaction_url = nil)
-        self.where(Configuration.instance.solr_uuid_field => uuid).
-            use_transaction_url(transaction_url).first
+      def find_by_uuid(uuid)
+        self.where(Configuration.instance.solr_uuid_field => uuid).first
       end
 
       def method_missing(name, *args, &block)
@@ -64,8 +60,7 @@ module ActiveMedusa
               select{ |p| p[:class] == self and
                 p[:name].to_s == name_s.gsub(/find_by_/, '') }.first
           if prop
-            return self.where(prop[:solr_field] => args[0]).
-                use_transaction_url(args[1]).first
+            return self.where(prop[:solr_field] => args[0]).first
           end
         end
         super

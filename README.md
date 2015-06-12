@@ -248,6 +248,8 @@ item.save!
 There is no guarantee, however, that the entity will actually receive this slug,
 and no error will be raised if it doesn't.
 
+For Fedora performance reasons, slugs are not advised.
+
 ## Updating Entities
 
 Call `update` on an entity. (Bang version [!] also available.) This method
@@ -503,8 +505,6 @@ item = Item.find(id).more_like_this.limit(5)
 
 ## Transactions
 
-### CRUD
-
 Simply wrap any CRUD operation(s) inside a block:
 
 ```ruby
@@ -515,16 +515,9 @@ ActiveMedusa::Base.transaction do |tx_url|
 end
 ```
 
-### Querying
-
-You can query within a transaction using the `use_transaction_url` method of
-`ActiveMedusa::Relation`.
-
-```ruby
-ActiveMedusa::Base.transaction do |tx_url|
-  Item.all.use_transaction_url(tx_url).where('..')
-end
-```
+Note: it is not possible to query within a transaction. (Fedora does not
+dispatch messages about operations that happen inside transactions until they
+have been committed.)
 
 ## Validation
 

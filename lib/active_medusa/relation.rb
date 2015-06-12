@@ -1,7 +1,6 @@
 require 'active_medusa/facet'
 require 'active_medusa/result_set'
 require 'active_medusa/solr'
-require 'active_medusa/transactions'
 require 'httpclient'
 
 module ActiveMedusa
@@ -11,8 +10,6 @@ module ActiveMedusa
   #
   class Relation
 
-    include Transactions
-
     # @!attribute solr_request
     #   @return [Hash]
     attr_reader :solr_request
@@ -20,8 +17,6 @@ module ActiveMedusa
     # @!attribute solr_response
     #   @return [Hash]
     attr_reader :solr_response
-
-    attr_accessor :transaction_url
 
     ##
     # @param caller [ActiveMedusa::Base] The calling entity, or `nil` to
@@ -128,14 +123,6 @@ module ActiveMedusa
     end
 
     ##
-    # @param [String] url Transaction URL
-    #
-    def use_transaction_url(url)
-      self.transaction_url = url
-      self
-    end
-
-    ##
     # @param where [Hash|String]
     # @return [ActiveMedusa::Entity] self
     #
@@ -210,7 +197,6 @@ module ActiveMedusa
                                         repository_url: doc['id'],
                                         score: doc['score'])
               url = doc['id']
-              url = transactional_url(url) if self.transaction_url.present?
               f4_response = Fedora.client.get(
                   url, nil, { 'Accept' => 'application/n-triples' })
               graph = RDF::Graph.new
