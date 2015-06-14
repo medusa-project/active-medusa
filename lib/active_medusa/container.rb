@@ -53,6 +53,7 @@ module ActiveMedusa
     def save_new
       run_callbacks :create do
         populate_graph(self.rdf_graph)
+        raise 'Validation error' unless self.valid?
         url = transactional_url(self.parent_url)
         body = self.rdf_graph.to_ttl
         headers = { 'Content-Type' => 'text/turtle' }

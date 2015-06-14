@@ -41,6 +41,7 @@ module ActiveMedusa
     #
     def save_new
       run_callbacks :create do
+        raise 'Validation error' unless self.valid?
         begin
           response = nil
           if self.upload_pathname

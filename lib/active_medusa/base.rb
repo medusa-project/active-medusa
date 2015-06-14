@@ -23,6 +23,8 @@ module ActiveMedusa
     include Relationships
     include Transactions
 
+    REJECT_USER_SUPPLIED_PARAMS = [:id, :uuid]
+
     define_model_callbacks :create, :destroy, :load, :save, :update,
                            only: [:after, :before]
 
@@ -156,7 +158,7 @@ module ActiveMedusa
       @destroyed = false
       @loaded = false
       @persisted = false
-      params.except(:id, :uuid).each do |k, v|
+      params.except(REJECT_USER_SUPPLIED_PARAMS).each do |k, v|
         send("#{k}=", v) if respond_to?("#{k}=")
       end
     end
@@ -225,7 +227,6 @@ module ActiveMedusa
     # @raise [RuntimeError]
     #
     def save
-      raise 'Validation error' unless self.valid?
       raise 'Cannot save a destroyed object.' if self.destroyed?
       run_callbacks :save do
         if self.repository_url
@@ -233,8 +234,8 @@ module ActiveMedusa
         elsif self.parent_url
           save_new
         else
-          raise 'UUID and container URL are both nil. One or the other is '\
-          'required.'
+          raise 'repository_url and parent_url are both nil. One or the other '\
+          'is required.'
         end
       end
     end
@@ -245,24 +246,20 @@ module ActiveMedusa
     # @param params [Hash]
     #
     def update(params)
-      run_callbacks :update do
-        params.except(:id, :uuid).each do |k, v|
-          send("#{k}=", v) if respond_to?("#{k}=")
-        end
-        self.save
+      params.except(REJECT_USER_SUPPLIED_PARAMS).each do |k, v|
+        send("#{k}=", v) if respond_to?("#{k}=")
       end
+      self.save
     end
 
     ##
     # @param params [Hash]
     #
     def update!(params)
-      run_callbacks :update do
-        params.except(:id, :uuid).each do |k, v|
-          send("#{k}=", v) if respond_to?("#{k}=")
-        end
-        self.save!
+      params.except(REJECT_USER_SUPPLIED_PARAMS).each do |k, v|
+        send("#{k}=", v) if respond_to?("#{k}=")
       end
+      self.save!
     end
 
     ##
@@ -359,29 +356,32 @@ module ActiveMedusa
     # @raise [RuntimeError]
     #
     def save_existing
-      populate_graph(self.rdf_graph)
+      run_callbacks :update do
+        populate_graph(self.rdf_graph)
+        raise 'Validation error' unless self.valid?
 
-      # update last-modified triple so fedora will accept it
-      last_modified_pred = 'http://fedora.info/definitions/v4/repository#lastModified'
-      current_graph = fetch_current_graph
-      if current_graph
-        current_last_modified = current_graph.any_object(last_modified_pred).to_s
-        self.rdf_graph.each_statement do |st|
-          if st.predicate.to_s == last_modified_pred
-            st.object = current_last_modified
-            break
+        # update last-modified triple so fedora will accept it
+        last_modified_pred = 'http://fedora.info/definitions/v4/repository#lastModified'
+        current_graph = fetch_current_graph
+        if current_graph
+          current_last_modified = current_graph.any_object(last_modified_pred).to_s
+          self.rdf_graph.each_statement do |st|
+            if st.predicate.to_s == last_modified_pred
+              st.object = current_last_modified
+              break
+            end
           end
         end
-      end
 
-      url = transactional_url(self.repository_metadata_url)
-      body = self.rdf_graph.to_ttl
-      headers = { 'Content-Type' => 'text/turtle' }
-      # TODO: prefixes http://blog.datagraph.org/2010/04/parsing-rdf-with-ruby
-      begin
-        Fedora.client.put(url, body, headers)
-      rescue HTTPClient::BadResponseError => e
-        raise "#{e.res.status}: #{e.res.body}"
+        url = transactional_url(self.repository_metadata_url)
+        body = self.rdf_graph.to_ttl
+        headers = { 'Content-Type' => 'text/turtle' }
+        # TODO: prefixes http://blog.datagraph.org/2010/04/parsing-rdf-with-ruby
+        begin
+          Fedora.client.put(url, body, headers)
+        rescue HTTPClient::BadResponseError => e
+          raise "#{e.res.status}: #{e.res.body}"
+        end
       end
     end
 
