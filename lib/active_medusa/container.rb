@@ -59,11 +59,7 @@ module ActiveMedusa
         headers = { 'Content-Type' => 'text/turtle' }
         headers['Slug'] = self.requested_slug if self.requested_slug.present?
         # TODO: prefixes http://blog.datagraph.org/2010/04/parsing-rdf-with-ruby
-        begin
-          response = Fedora.client.post(url, body, headers)
-        rescue HTTPClient::BadResponseError => e
-          raise "#{e.res.status}: #{e.res.body}"
-        end
+        response = Fedora.client.post(url, body, headers)
         self.repository_url = nontransactional_url(response.header['Location'].first)
         self.requested_slug = nil
         @persisted = true

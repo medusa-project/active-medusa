@@ -377,11 +377,7 @@ module ActiveMedusa
         body = self.rdf_graph.to_ttl
         headers = { 'Content-Type' => 'text/turtle' }
         # TODO: prefixes http://blog.datagraph.org/2010/04/parsing-rdf-with-ruby
-        begin
-          Fedora.client.put(url, body, headers)
-        rescue HTTPClient::BadResponseError => e
-          raise "#{e.res.status}: #{e.res.body}"
-        end
+        Fedora.client.put(url, body, headers)
       end
     end
 
