@@ -144,8 +144,8 @@ object of a triple whose predicate is the value of
 
 `rdf_property` is a convenience method that maps entity properties to an
 instance's RDF graph and creates accessor and finder methods for them. It also
-enables bonus features like `find_by_x`, auto-generated accessors and ability
-to use the properties in `create` and `update` calls.
+enables bonus features like validation, `find_by_x`, auto-generated accessors,
+and ability to use the properties in `create` and `update` calls.
 
 `rdf_property` predicates must be unique and can only be used in one triple per
 entity graph.
@@ -524,6 +524,9 @@ have been committed.)
 `ActiveMedusa::Base` includes `ActiveModel::Model`, which supplies all the
 validation functionality that ActiveRecord enjoys. So, you can use
 ActiveRecord validation methods on your ActiveMedusa entities.
+
+The only catch is that a property must be an `rdf_property` in order to be
+validatable.
 
 ## Forms
 
