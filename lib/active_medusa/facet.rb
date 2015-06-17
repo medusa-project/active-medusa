@@ -25,10 +25,6 @@ module ActiveMedusa
         @count = 0
       end
 
-      def facet_query
-        "#{self.facet.field}:\"#{self.name}\""
-      end
-
     end
 
     attr_accessor :field
