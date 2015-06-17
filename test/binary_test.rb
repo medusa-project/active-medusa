@@ -44,6 +44,9 @@ class BinaryTest < Minitest::Test
     url = "http://example.org/#{SLUGS[0]}"
     bs = Bytestream.new(repository_url: url)
     assert_equal url + '/fcr:metadata', bs.repository_metadata_url
+
+    bs = Bytestream.new(repository_url: nil)
+    assert_nil bs.repository_metadata_url
   end
 
   # save

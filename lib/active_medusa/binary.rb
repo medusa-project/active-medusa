@@ -29,7 +29,9 @@ module ActiveMedusa
     end
 
     def repository_metadata_url
-      "#{transactional_url(self.repository_url).chomp('/')}/fcr:metadata"
+      self.repository_url ?
+          "#{transactional_url(self.repository_url).chomp('/')}/fcr:metadata" :
+          nil
     end
 
     protected
