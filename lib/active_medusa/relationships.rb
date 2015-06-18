@@ -42,6 +42,10 @@ module ActiveMedusa
       def belongs_to(entity, options)
         raise 'Cannot define a `belongs_to` relationship named `parent`.' if
             [options[:name], entity].map{ |e| e.to_s.downcase }.include?('parent')
+        [:predicate, :solr_field].each do |opt|
+          raise "belongs_to statement is missing #{opt} option" unless
+              options.has_key?(opt)
+        end
 
         if options[:class_name]
           entity_class = Object.const_get(options[:class_name].to_s)
