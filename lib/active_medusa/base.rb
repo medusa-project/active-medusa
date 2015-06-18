@@ -121,8 +121,13 @@ module ActiveMedusa
     # @param options [Hash] Hash with the following keys:
     #        `:predicate`: RDF predicate URI; `:xs_type`: One of:
     #        `:string`, `:integer`, `:boolean`, `:anyURI`; `:solr_field`
+    # @raise RuntimeError If any of the required options are missing
     #
     def self.rdf_property(name, options)
+      [:predicate, :xs_type, :solr_field].each do |opt|
+        raise "rdf_property statement is missing #{opt} option" unless
+            options.has_key?(opt)
+      end
       @@rdf_properties << options.merge(class: self, name: name)
       instance_eval { attr_accessor name }
     end

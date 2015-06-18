@@ -50,6 +50,12 @@ class BaseTest < Minitest::Test
     assert_equal 'cats', item.full_text
   end
 
+  def test_rdf_property_requires_certain_options
+    assert_raises RuntimeError do
+      Item::rdf_property :something, invalid: 'bla', invalid2: 'bla'
+    end
+  end
+
   # transaction
 
   def test_transaction
