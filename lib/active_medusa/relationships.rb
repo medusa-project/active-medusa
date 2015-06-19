@@ -64,7 +64,7 @@ module ActiveMedusa
         end
 
         # Define a lazy getter method to access the target of the relationship
-        define_method(options[:name] || entity_class.to_s.underscore) do
+        define_method(options[:name] || entity_class.to_s.underscore.split('/').last) do
           owner = @belongs_to_instances[entity_class]
           unless owner
             association = @@associations.
@@ -83,7 +83,7 @@ module ActiveMedusa
         end
 
         # Define a setter method to access the target of the relationship
-        define_method("#{options[:name] || entity_class.to_s.underscore}=") do |owner|
+        define_method("#{options[:name] || entity_class.to_s.underscore.split('/').last}=") do |owner|
           raise 'Owner must descend from ActiveMedusa::Container' unless
               owner.kind_of?(ActiveMedusa::Container)
           @belongs_to_instances[entity_class] = owner # store a reference to the owner
