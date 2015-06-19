@@ -243,6 +243,11 @@ class BaseTest < Minitest::Test
     assert item.instance_variable_get('@after_save_called')
   end
 
+  def test_save_consecutively
+    item = Item.new(parent_url: @config.fedora_url, full_text: 'cats')
+    3.times { item.save! }
+  end
+
   # update
 
   def test_update_should_update_the_instance
