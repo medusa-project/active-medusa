@@ -18,9 +18,7 @@ module ActiveMedusa
     # @param params [Hash]
     #
     def initialize(params = {})
-      params.except(:id, :uuid).each do |k, v|
-        send("#{k}=", v) if respond_to?("#{k}=")
-      end
+      params.each { |k, v| send("#{k}=", v) if respond_to?("#{k}=") }
     end
 
   end
