@@ -1,7 +1,7 @@
 require_relative 'test_helper'
 
 class RelationshipsTest < Minitest::Test
-=begin
+
   # Any entities created in the tests should use one of these slugs, to ensure
   # that they get torn down.
   SLUGS = %w(item1 item2 item3 item4 item5 item6 item7 item8 item9 item10)
@@ -17,7 +17,6 @@ class RelationshipsTest < Minitest::Test
       @http.delete("#{@config.fedora_url}/#{slug}/fcr:tombstone") rescue nil
     end
   end
-=end
 
   # associations
 
@@ -31,6 +30,45 @@ class RelationshipsTest < Minitest::Test
     assert_raises RuntimeError do
       Item::belongs_to :something, invalid: 'bla', invalid2: 'bla'
     end
+  end
+
+  def test_cannot_belong_to_parent
+    assert_raises RuntimeError do
+      Item::belongs_to :parent, predicate: 'bla', solr_field: 'bla'
+    end
+  end
+
+  def test_belongs_to_creates_accessors
+    bs = Bytestream.new
+    item = Item.new
+    bs.item = item
+    assert_equal item, bs.item
+  end
+
+  def test_belongs_to_works
+    item = Item.create!(parent_url: @config.fedora_url, full_text: 'cats')
+    bs = Bytestream.create!(parent_url: item.repository_url,
+                            requested_slug: SLUGS.first,
+                            upload_pathname: __FILE__)
+    bs.item = item
+    bs.save!
+
+    # make sure the relationship appears in the graph
+    response = @http.get(bs.repository_metadata_url, nil,
+                         { 'Accept' => 'application/n-triples' })
+    graph = RDF::Graph.new
+    graph.from_ntriples(response.body)
+    association = Bytestream.associations.
+        select{ |a| a.source_class == bs.class and
+        a.target_class == item.class and
+        a.type == ActiveMedusa::Association::Type::BELONGS_TO }.first
+    found = false
+    graph.each_statement do |st|
+      if st.predicate == association.rdf_predicate
+        found = true
+      end
+    end
+    assert found
   end
 
   # children
