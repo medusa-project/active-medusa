@@ -378,8 +378,8 @@ triple; see `entity_class_uri` above.
 
 ## Binary Entities
 
-Binary entities work similarly to container entities, with a few differences.
-Using the example above, a `Bytestream` can be initialized like an `Item`:
+Binary entities work similarly to container entities. Using the example above,
+a `Bytestream` can be initialized like an `Item`:
 
 ```ruby
 b = Bytestream.new(parent_url: 'http://url/of/parent/container')
@@ -404,7 +404,8 @@ Optionally, but ideally, you should also specify the binary's media type:
 b.media_type = 'image/tiff'
 ```
 
-The binary can then be saved just like a container:
+At this point, you must save it before you can set any additional properties.
+This is a limitation of ActiveMedusa. It can be saved just like a container:
 
 ```ruby
 b.save!

@@ -93,4 +93,14 @@ class BinaryTest < Minitest::Test
     assert !bs.persisted?
   end
 
+  def test_save_loads_rdf_graph
+    bs = Bytestream.new(parent_url: @config.fedora_url,
+                        upload_pathname: __FILE__,
+                        requested_slug: SLUGS[0],
+                        media_type: 'text/plain')
+    assert bs.rdf_graph.count == 1
+    bs.save!
+    assert bs.rdf_graph.count > 10
+  end
+
 end
