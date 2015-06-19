@@ -33,13 +33,26 @@ sections of the Fedora wiki for more information.)
 
 ## Installation
 
+Currently ActiveMedusa is not available via rubygems. There are a couple of
+other options:
+
+### Refer to a local copy
+
+Check out the code from GitHub and point to it in your application's Gemfile:
+
+```ruby
+gem 'active-medusa', path: '/path/to/active_medusa'
+```
+
+### Refer to the copy on GitHub
+
 Add this line to your application's Gemfile:
 
 ```ruby
-gem 'active-medusa'
+gem 'active-medusa', github: 'medusa-project/active-medusa'
 ```
 
-And then execute:
+Then execute:
 
     $ bundle
 
