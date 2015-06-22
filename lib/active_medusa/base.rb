@@ -159,12 +159,20 @@ module ActiveMedusa
     # @param params [Hash]
     #
     def initialize(params = {})
-      super()
+      super() # call module initializers
       @destroyed = false
       @loaded = false
       @persisted = false
       params.except(REJECT_USER_SUPPLIED_PARAMS).each do |k, v|
-        send("#{k}=", v) if respond_to?("#{k}=")
+        if k.to_sym == :rdf_graph
+          # copy statements from the given graph instead of overwriting the
+          # entire graph
+          v.each_statement do |st|
+            self.rdf_graph << [RDF::URI(), st.predicate, st.object]
+          end
+        else
+          send("#{k}=", v) if respond_to?("#{k}=")
+        end
       end
     end
 
