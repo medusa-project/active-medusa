@@ -77,7 +77,7 @@ module ActiveMedusa
       graph << RDF::Statement.new(
           RDF::URI(),
           RDF::URI('http://fedora.info/definitions/v4/indexing#hasIndexingTransformation'),
-          Configuration.instance.fedora_indexing_transformation)
+          Configuration.instance.fedora_indexing_transformation.to_s)
       graph << RDF::Statement.new(
           RDF::URI(),
           RDF::URI('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
