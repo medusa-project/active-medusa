@@ -10,10 +10,6 @@ module ActiveMedusa
   #
   class Relation
 
-    # @!attribute solr_request
-    #   @return [Hash]
-    attr_reader :solr_request
-
     # @!attribute solr_response
     #   @return [Hash]
     attr_reader :solr_response
@@ -177,13 +173,11 @@ module ActiveMedusa
         endpoint = @more_like_this ?
             Configuration.instance.solr_more_like_this_endpoint.gsub(/\//, '') :
             'select'
-        solr_result = Solr.client.get(endpoint, params: params)
-        @solr_request = solr_result['request']
-        @solr_response = solr_result['response']
+        @solr_response = Solr.client.get(endpoint, params: params)
         @results.facet_fields = solr_facet_fields_to_objects(
-            solr_result['facet_counts']['facet_fields']) if @facet
-        @results.total_length = solr_result['response']['numFound'].to_i
-        solr_result['response']['docs'].each do |doc|
+            @solr_response['facet_counts']['facet_fields']) if @facet
+        @results.total_length = @solr_response['response']['numFound'].to_i
+        @solr_response['response']['docs'].each do |doc|
           begin
             if @calling_class == ActiveMedusa::Container
               predicate = doc[Configuration.instance.solr_class_field.to_s]

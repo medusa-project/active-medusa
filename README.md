@@ -586,17 +586,15 @@ commits and tags, and push the `.gem` file to
 
 ## Debugging
 
-`ActiveMedusa::Relation` has `solr_request` and `solr_response` methods that
-can help in tracking down issues with Solr. Use it like this:
+`ActiveMedusa::Relation` has a `solr_response` method that you can use to
+inspect the query and see the raw Solr results. Use it like this:
 
 ```ruby
 items = Item.all.to_a # executes a Solr request
-puts items.solr_request.inspect
 puts items.solr_response.inspect
 ```
 
-`solr_request` and `solr_response` will return `nil` until a request has been
-executed.
+Note that it will return `nil` until a request has been executed.
 
 # Contributing
 
