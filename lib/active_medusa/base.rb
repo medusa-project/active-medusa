@@ -250,6 +250,7 @@ module ActiveMedusa
           raise 'repository_url and parent_url are both nil. One or the other '\
           'is required.'
         end
+        populate_from_graph(fetch_current_graph)
       end
     end
 
@@ -303,6 +304,46 @@ module ActiveMedusa
         return graph
       end
       nil
+    end
+
+    ##
+    # Populates the instance with data from an RDF graph.
+    #
+    # @param graph [RDF::Graph]
+    #
+    def populate_from_graph(graph)
+      self.rdf_graph = graph
+
+      self.uuid = graph.any_object('http://fedora.info/definitions/v4/repository#uuid').to_s
+      self.parent_url = graph.any_object('http://fedora.info/definitions/v4/repository#hasParent').to_s
+
+      # set values of subclass `rdf_property` definitions
+      @@rdf_properties.select{ |p| p[:class] == self.class }.each do |prop|
+        value = graph.any_object(prop[:predicate])
+        if prop[:xs_type] == :boolean
+          value = ['true', '1'].include?(value.to_s)
+        else
+          value = value.to_s
+        end
+        send("#{prop[:name]}=", value)
+      end
+
+      # add dependent binaries
+      self.class.associations.
+          select{ |a| a.source_class == self.class and
+          a.type == ActiveMedusa::Association::Type::HAS_MANY and
+          a.target_class.new.kind_of?(ActiveMedusa::Binary) }.each do |assoc|
+        has_binary_instances[assoc.target_class] ||= Set.new
+        graph.each_statement do |st|
+          if st.predicate.to_s == assoc.rdf_predicate
+            has_binary_instances[assoc.target_class] <<
+                assoc.target_class.new(repository_url: st.object.to_s) # TODO: initialize this properly
+          end
+        end
+      end
+
+      self.loaded = true
+      @persisted = true
     end
 
     ##
@@ -373,19 +414,6 @@ module ActiveMedusa
         populate_outgoing_graph(self.rdf_graph)
         raise 'Validation error' unless self.valid?
 
-        # update last-modified triple so fedora will accept it
-        last_modified_pred = 'http://fedora.info/definitions/v4/repository#lastModified'
-        current_graph = fetch_current_graph
-        if current_graph
-          current_last_modified = current_graph.any_object(last_modified_pred).to_s
-          self.rdf_graph.each_statement do |st|
-            if st.predicate.to_s == last_modified_pred
-              st.object = current_last_modified
-              break
-            end
-          end
-        end
-
         url = transactional_url(self.repository_metadata_url)
         body = self.rdf_graph.to_ttl
         headers = { 'Content-Type' => 'text/turtle' }
@@ -412,46 +440,6 @@ module ActiveMedusa
       run_callbacks :load do
         @loaded = loaded
       end
-    end
-
-    ##
-    # Populates the instance with data from an RDF graph.
-    #
-    # @param graph [RDF::Graph]
-    #
-    def populate_from_graph(graph)
-      self.rdf_graph = graph
-
-      self.uuid = graph.any_object('http://fedora.info/definitions/v4/repository#uuid').to_s
-      self.parent_url = graph.any_object('http://fedora.info/definitions/v4/repository#hasParent').to_s
-
-      # set values of subclass `rdf_property` definitions
-      @@rdf_properties.select{ |p| p[:class] == self.class }.each do |prop|
-        value = graph.any_object(prop[:predicate])
-        if prop[:xs_type] == :boolean
-          value = ['true', '1'].include?(value.to_s)
-        else
-          value = value.to_s
-        end
-        send("#{prop[:name]}=", value)
-      end
-
-      # add dependent binaries
-      self.class.associations.
-          select{ |a| a.source_class == self.class and
-              a.type == ActiveMedusa::Association::Type::HAS_MANY and
-              a.target_class.new.kind_of?(ActiveMedusa::Binary) }.each do |assoc|
-        has_binary_instances[assoc.target_class] ||= Set.new
-        graph.each_statement do |st|
-          if st.predicate.to_s == assoc.rdf_predicate
-            has_binary_instances[assoc.target_class] <<
-                assoc.target_class.new(repository_url: st.object.to_s) # TODO: initialize this properly
-          end
-        end
-      end
-
-      self.loaded = true
-      @persisted = true
     end
 
   end
