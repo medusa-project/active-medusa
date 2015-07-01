@@ -85,7 +85,7 @@ class BaseTest < Minitest::Test
   # initialize
 
   def test_initialize_should_ignore_id_and_uuid
-    model = Item.new(id: 'dogs', uuid: 'dogs')
+    model = Item.new(id: 'cats', uuid: 'dogs')
     assert_nil model.id
     assert_nil model.uuid
   end
