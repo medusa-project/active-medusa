@@ -148,7 +148,8 @@ module ActiveMedusa
       if @calling_class and !@loaded
         # if @calling_class is ActiveMedusa::Container, query across all
         # entities.
-        if @calling_class != ActiveMedusa::Container
+        if @calling_class != ActiveMedusa::Container and
+            @calling_class.respond_to?(:entity_class_uri)
           # limit the query to the calling class
           @where_clauses << "#{Configuration.instance.solr_class_field}:\""\
           "#{@calling_class.entity_class_uri}\""
