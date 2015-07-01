@@ -311,7 +311,7 @@ module ActiveMedusa
     # @param graph [RDF::Graph]
     # @return [RDF::Graph] Input graph
     #
-    def populate_graph(graph)
+    def populate_outgoing_graph(graph)
       # add properties from subclass rdf_property definitions
       @@rdf_properties.select{ |p| p[:class] == self.class }.each do |prop|
         graph.delete([nil, RDF::URI(prop[:predicate]), nil])
@@ -370,7 +370,7 @@ module ActiveMedusa
     #
     def save_existing
       run_callbacks :update do
-        populate_graph(self.rdf_graph)
+        populate_outgoing_graph(self.rdf_graph)
         raise 'Validation error' unless self.valid?
 
         # update last-modified triple so fedora will accept it
