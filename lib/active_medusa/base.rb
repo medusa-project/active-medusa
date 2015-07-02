@@ -70,8 +70,6 @@ module ActiveMedusa
       d ? d[:class] : nil
     end
 
-    private_class_method :class_of_predicate
-
     ##
     # @param params [Hash]
     # @return [ActiveMedusa::Base]

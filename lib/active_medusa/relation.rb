@@ -182,8 +182,7 @@ module ActiveMedusa
           begin
             if @calling_class == ActiveMedusa::Container
               predicate = doc[Configuration.instance.solr_class_field.to_s]
-              instantiable = ActiveMedusa::Base.send(:class_of_predicate,
-                                                     predicate)
+              instantiable = ActiveMedusa::Base.class_of_predicate(predicate)
             else
               instantiable = @calling_class
             end
