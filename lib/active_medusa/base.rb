@@ -416,7 +416,7 @@ module ActiveMedusa
     def save_existing
       run_callbacks :update do
         populate_outgoing_graph(self.rdf_graph)
-        self.validate!
+        raise ActiveModel::ValidationError unless self.valid?
         url = transactional_url(self.repository_metadata_url)
         body = self.rdf_graph.to_ttl
         headers = { 'Content-Type' => 'text/turtle' }

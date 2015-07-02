@@ -45,7 +45,7 @@ module ActiveMedusa
     #
     def save_new
       run_callbacks :create do
-        self.validate!
+        raise ActiveModel::ValidationError unless self.valid?
         response = nil
         if self.upload_pathname
           File.open(self.upload_pathname) do |file|
