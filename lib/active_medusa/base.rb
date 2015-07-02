@@ -23,7 +23,7 @@ module ActiveMedusa
     include Relationships
     include Transactions
 
-    REJECT_USER_SUPPLIED_PARAMS = [:id, :uuid]
+    REJECT_PARAMS = [:id, :uuid]
 
     define_model_callbacks :create, :destroy, :load, :save, :update,
                            only: [:after, :before]
@@ -135,7 +135,7 @@ module ActiveMedusa
     ##
     # Executes a block within a transaction. Use like:
     #
-    #     ActiveMedusa::Base.transaction do |transaction_url|
+    #     ActiveMedusa::Base.transaction do |tx_url|
     #       # Code to run within the transaction.
     #       # Any raised errors will cause an automatic rollback.
     #     end
@@ -160,13 +160,11 @@ module ActiveMedusa
     #
     def initialize(params = {})
       super() # call module initializers
-      @destroyed = false
-      @loaded = false
-      @persisted = false
-      params.except(*REJECT_USER_SUPPLIED_PARAMS).each do |k, v|
+      @destroyed = @loaded = @persisted = false
+      params.except(*REJECT_PARAMS).each do |k, v|
         if k.to_sym == :rdf_graph
-          # copy statements from the given graph instead of overwriting the
-          # entire graph
+          # copy statements from the graph instead of overwriting the
+          # instance's graph (which may not be empty)
           v.each_statement do |st|
             self.rdf_graph << [RDF::URI(), st.predicate, st.object]
           end
@@ -259,9 +257,11 @@ module ActiveMedusa
 
     ##
     # @param params [Hash]
+    # @raise [RuntimeError]
+    # @raise [ActiveModel::ValidationError]
     #
     def update(params)
-      params.except(*REJECT_USER_SUPPLIED_PARAMS).each do |k, v|
+      params.except(*REJECT_PARAMS).each do |k, v|
         send("#{k}=", v) if respond_to?("#{k}=")
       end
       self.save
@@ -269,9 +269,11 @@ module ActiveMedusa
 
     ##
     # @param params [Hash]
+    # @raise [RuntimeError]
+    # @raise [ActiveModel::ValidationError]
     #
     def update!(params)
-      params.except(*REJECT_USER_SUPPLIED_PARAMS).each do |k, v|
+      params.except(*REJECT_PARAMS).each do |k, v|
         send("#{k}=", v) if respond_to?("#{k}=")
       end
       self.save!
@@ -424,7 +426,7 @@ module ActiveMedusa
     end
 
     ##
-    # Creates a new node.
+    # Abstract method that subclasses must override.
     #
     # @raise [RuntimeError]
     #
