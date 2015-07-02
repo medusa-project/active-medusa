@@ -248,6 +248,23 @@ class BaseTest < Minitest::Test
     3.times { item.save! }
   end
 
+  ##
+  # When a child node N2 is added to a node N1, N1's lastModified triple gets
+  # updated. This tests whether a stale instance of N1 will still save.
+  #
+  def test_stale_save
+    collection = Collection.create!(parent_url: @config.fedora_url,
+                                    requested_slug: SLUGS[0])
+
+    item = Item.create!(parent_url: collection.repository_url,
+                        requested_slug: SLUGS[1])
+    item.collection = collection
+    item.save!
+
+    collection.key = 'cats'
+    collection.save! # absence of an error is a pass
+  end
+
   # update
 
   def test_update_should_update_the_instance
