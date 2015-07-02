@@ -37,13 +37,15 @@ module ActiveMedusa
     protected
 
     ##
-    # Creates a new node.
+    # Creates a new node by POSTing `parent_url`, and then populates the
+    # instance's `rdf_graph` with a GET to its `fcr:metadata`.
     #
     # @raise [RuntimeError]
+    # @raise [ActiveModel::ValidationError]
     #
     def save_new
       run_callbacks :create do
-        raise 'Validation error' unless self.valid?
+        self.validate!
         response = nil
         if self.upload_pathname
           File.open(self.upload_pathname) do |file|
