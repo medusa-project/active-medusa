@@ -76,7 +76,7 @@ module ActiveMedusa
         self.repository_url = nontransactional_url(
             response.header['Location'].first)
         @persisted = true
-        populate_from_graph(fetch_current_graph)
+        self.reload!
       end
     end
 
