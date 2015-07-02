@@ -189,7 +189,7 @@ module ActiveMedusa
 
     ##
     # @param also_tombstone [Boolean]
-    # @return Boolean
+    # @return [Boolean]
     #
     def delete(also_tombstone = false)
       if @persisted and !@destroyed
@@ -227,7 +227,7 @@ module ActiveMedusa
     end
 
     def reload!
-      populate_from_graph(fetch_current_graph) if self.persisted?
+      populate_self_from_graph(fetch_current_graph) if self.persisted?
     end
 
     ##
@@ -249,7 +249,7 @@ module ActiveMedusa
           raise 'repository_url and parent_url are both nil. One or the other '\
           'is required.'
         end
-        populate_from_graph(fetch_current_graph)
+        populate_self_from_graph(fetch_current_graph)
       end
     end
 
@@ -310,46 +310,6 @@ module ActiveMedusa
     end
 
     ##
-    # Populates the instance with data from an RDF graph.
-    #
-    # @param graph [RDF::Graph]
-    #
-    def populate_from_graph(graph)
-      self.rdf_graph = graph
-
-      self.uuid = graph.any_object('http://fedora.info/definitions/v4/repository#uuid').to_s
-      self.parent_url = graph.any_object('http://fedora.info/definitions/v4/repository#hasParent').to_s
-
-      # set values of subclass `rdf_property` definitions
-      @@rdf_properties.select{ |p| p[:class] == self.class }.each do |prop|
-        value = graph.any_object(prop[:predicate])
-        if prop[:xs_type] == :boolean
-          value = ['true', '1'].include?(value.to_s)
-        else
-          value = value.to_s
-        end
-        send("#{prop[:name]}=", value)
-      end
-
-      # add dependent binaries
-      self.class.associations.
-          select{ |a| a.source_class == self.class and
-          a.type == ActiveMedusa::Association::Type::HAS_MANY and
-          a.target_class.new.kind_of?(ActiveMedusa::Binary) }.each do |assoc|
-        has_binary_instances[assoc.target_class] ||= Set.new
-        graph.each_statement do |st|
-          if st.predicate.to_s == assoc.rdf_predicate
-            has_binary_instances[assoc.target_class] <<
-                assoc.target_class.new(repository_url: st.object.to_s) # TODO: initialize this properly
-          end
-        end
-      end
-
-      self.loaded = true
-      @persisted = true
-    end
-
-    ##
     # Populates an RDF::Graph for sending to Fedora.
     #
     # @param graph [RDF::Graph]
@@ -405,6 +365,46 @@ module ActiveMedusa
       end
 
       graph
+    end
+
+    ##
+    # Populates the instance with data from an RDF graph.
+    #
+    # @param graph [RDF::Graph]
+    #
+    def populate_self_from_graph(graph)
+      self.rdf_graph = graph
+
+      self.uuid = graph.any_object('http://fedora.info/definitions/v4/repository#uuid').to_s
+      self.parent_url = graph.any_object('http://fedora.info/definitions/v4/repository#hasParent').to_s
+
+      # set values of subclass `rdf_property` definitions
+      @@rdf_properties.select{ |p| p[:class] == self.class }.each do |prop|
+        value = graph.any_object(prop[:predicate])
+        if prop[:xs_type] == :boolean
+          value = ['true', '1'].include?(value.to_s)
+        else
+          value = value.to_s
+        end
+        send("#{prop[:name]}=", value)
+      end
+
+      # add dependent binaries
+      self.class.associations.
+          select{ |a| a.source_class == self.class and
+          a.type == ActiveMedusa::Association::Type::HAS_MANY and
+          a.target_class.new.kind_of?(ActiveMedusa::Binary) }.each do |assoc|
+        has_binary_instances[assoc.target_class] ||= Set.new
+        graph.each_statement do |st|
+          if st.predicate.to_s == assoc.rdf_predicate
+            has_binary_instances[assoc.target_class] <<
+                assoc.target_class.new(repository_url: st.object.to_s) # TODO: initialize this properly
+          end
+        end
+      end
+
+      self.loaded = true
+      @persisted = true
     end
 
     ##

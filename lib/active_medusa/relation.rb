@@ -196,7 +196,7 @@ module ActiveMedusa
                   url, nil, { 'Accept' => 'application/n-triples' })
               graph = RDF::Graph.new
               graph.from_ntriples(f4_response.body)
-              entity.send(:populate_from_graph, graph)
+              entity.send(:populate_self_from_graph, graph)
               @results << entity
             else
               Configuration.instance.logger.
