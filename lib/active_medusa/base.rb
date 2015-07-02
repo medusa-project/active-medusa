@@ -227,7 +227,7 @@ module ActiveMedusa
     end
 
     def reload!
-      populate_self_from_graph(fetch_current_graph) if self.persisted?
+      populate_self_from_graph(fetch_current_graph)
     end
 
     ##
