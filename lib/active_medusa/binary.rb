@@ -86,7 +86,19 @@ module ActiveMedusa
         self.repository_url = nontransactional_url(
             response.header['Location'].first)
         @persisted = true
-        self.reload!
+        # if there are any triples in need of saving, copy them into the
+        # canonical graph and re-save
+        if self.rdf_graph.count > 0
+          graph_dup = RDF::Graph.new
+          self.rdf_graph.copy_into(graph_dup)
+          self.reload!
+          graph_dup.each_statement do |st|
+            self.rdf_graph << st
+          end
+          save_existing
+        else
+          self.reload!
+        end
       end
     end
 

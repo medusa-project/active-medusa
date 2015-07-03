@@ -6,6 +6,19 @@ module RDF
   class Graph
 
     ##
+    # Copies the statements from the instance into the given graph.
+    #
+    # @param graph [RDF::Graph]
+    # @return [RDF::Graph] The input graph.
+    #
+    def copy_into(graph)
+      self.each_statement do |st|
+        graph << st.dup
+      end
+      graph
+    end
+
+    ##
     # Returns any object corresponding to the given predicate.
     #
     # @param predicate string or RDF::URI
