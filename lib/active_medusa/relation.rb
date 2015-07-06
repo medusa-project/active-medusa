@@ -180,29 +180,10 @@ module ActiveMedusa
         @results.total_length = @solr_response['response']['numFound'].to_i
         @solr_response['response']['docs'].each do |doc|
           begin
-            if @calling_class == ActiveMedusa::Container
-              predicate = doc[Configuration.instance.solr_class_field.to_s]
-              instantiable = ActiveMedusa::Base.class_of_predicate(predicate)
-            else
-              instantiable = @calling_class
-            end
-            if instantiable
-              entity = instantiable.new(solr_representation: doc,
-                                        repository_url: doc['id'],
-                                        score: doc['score'])
-              url = doc['id']
-              f4_response = Fedora.client.get(
-                  url, nil, { 'Accept' => 'application/n-triples' })
-              graph = RDF::Graph.new
-              graph.from_ntriples(f4_response.body)
-              entity.send(:populate_self_from_graph, graph)
-              @results << entity
-            else
-              Configuration.instance.logger.
-                  error("Unable to instantiate a class associated with "\
-                  "#{doc[Configuration.instance.solr_class_field.to_s]}")
-              @results.total_length -= 1
-            end
+            entity = ActiveMedusa::Base.load(doc['id'])
+            entity.solr_representation = doc
+            entity.score = doc['score']
+            @results << entity
           rescue HTTPClient::BadResponseError => e
             # This probably means that the item was deleted from the
             # repository and the delete did not propagate to Solr for some
@@ -211,6 +192,10 @@ module ActiveMedusa
             Configuration.instance.logger.
                 error("Item present in Solr result is missing from "\
                 "repository: #{e.message}")
+            @results.total_length -= 1
+          rescue => e
+            Configuration.instance.logger.
+                error("Unable to load an object corresponding to #{doc['id']}")
             @results.total_length -= 1
           end
         end
