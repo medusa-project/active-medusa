@@ -247,7 +247,7 @@ module ActiveMedusa
           raise 'repository_url and parent_url are both nil. One or the other '\
           'is required.'
         end
-        populate_self_from_graph(fetch_current_graph)
+        self.reload!
       end
     end
 
