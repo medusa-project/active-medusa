@@ -500,6 +500,13 @@ items.facet_fields.each do |facet|
 end
 ```
 
+Faceting is enabled by default. To improve performance, you can turn it off if
+you aren't using it:
+
+```ruby
+items = Item.where('...').facet(false)
+```
+
 ### Relevance
 
 If no sort order is provided (via `order`), results will be sorted by relevance.

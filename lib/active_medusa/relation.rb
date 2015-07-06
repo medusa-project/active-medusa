@@ -20,7 +20,7 @@ module ActiveMedusa
     #
     def initialize(caller = nil)
       @calling_class = caller.kind_of?(Class) ? caller : caller.class
-      @facet = false
+      @facet = true
       @facet_queries = []
       @limit = nil
       @loaded = false
@@ -39,7 +39,7 @@ module ActiveMedusa
     end
 
     ##
-    # @param fq [Array] or string
+    # @param fq [Array, String]
     # @return [ActiveMedusa::Relation] self
     #
     def facet(fq)
@@ -90,7 +90,7 @@ module ActiveMedusa
     end
 
     ##
-    # @param order [Hash|String]
+    # @param order [Hash, String]
     # @return [ActiveMedusa::Entity] self
     #
     def order(order)
@@ -119,7 +119,7 @@ module ActiveMedusa
     end
 
     ##
-    # @param where [Hash|String]
+    # @param where [Hash, String]
     # @return [ActiveMedusa::Entity] self
     #
     def where(where)
