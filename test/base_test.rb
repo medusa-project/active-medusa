@@ -42,6 +42,23 @@ class BaseTest < Minitest::Test
     assert_equal 'http://example.org/Item', Item.entity_class_uri
   end
 
+  # load
+
+  def test_load_with_existing_node
+    item = Item.create!(parent_url: @config.fedora_url,
+                        requested_slug: SLUGS[0],
+                        full_text: 'cats')
+    actual = ActiveMedusa::Base.load(item.repository_url)
+    assert_kind_of Item, actual
+    assert_equal 'cats', actual.full_text
+  end
+
+  def test_load_with_nonexistent_node
+    assert_raises RDF::ReaderError do
+      ActiveMedusa::Base.load(@config.fedora_url + '/blablabla')
+    end
+  end
+
   # rdf_property
 
   def test_rdf_property_creates_accessor

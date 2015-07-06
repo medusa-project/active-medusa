@@ -101,6 +101,41 @@ module ActiveMedusa
     end
 
     ##
+    # @param repository_url [String]
+    # @return [ActiveMedusa::Base] `ActiveMedusa::Base` subclass
+    # @raise [RuntimeError, RDF::ReaderError]
+    #
+    def self.load(repository_url)
+      # find the class to instantiate
+      f4_response = Fedora.client.get(
+          repository_url.chomp('/') + '/fcr:metadata', nil,
+          { 'Accept' => 'application/n-triples' })
+      graph = RDF::Graph.new
+      graph.from_ntriples(f4_response.body)
+      predicate = nil
+      graph.each_statement do |st|
+        if st.predicate.to_s == Configuration.instance.class_predicate.to_s
+          predicate = st.object.to_s
+          break
+        end
+      end
+
+      if predicate
+        instantiable = ActiveMedusa::Base.class_of_predicate(predicate)
+        if instantiable
+          entity = instantiable.new(repository_url: repository_url)
+          entity.send(:populate_self_from_graph, graph)
+          return entity
+        else
+          raise "Unable to instantiate a(n) #{instantiable}"
+        end
+      else
+        raise "Unable to find a class associated with #{predicate}"
+      end
+      nil
+    end
+
+    ##
     # @return [Set] Set of hashes with the following keys:
     #        `:class`, `:name`, `:predicate`, `:xs_type`, `:solr_field`
     #
@@ -418,7 +453,6 @@ module ActiveMedusa
         url = transactional_url(self.repository_metadata_url)
         body = self.rdf_graph.to_ttl
         headers = { 'Content-Type' => 'text/turtle' }
-        # TODO: prefixes http://blog.datagraph.org/2010/04/parsing-rdf-with-ruby
         Fedora.client.put(url, body, headers)
       end
     end
