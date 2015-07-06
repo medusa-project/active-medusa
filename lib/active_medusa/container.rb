@@ -1,4 +1,5 @@
 require 'active_medusa/base'
+require 'active_model/validations'
 
 module ActiveMedusa
 
