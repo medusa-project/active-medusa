@@ -153,7 +153,8 @@ module ActiveMedusa
     # @param name [Symbol] Property name
     # @param options [Hash] Hash with the following keys:
     #        `:predicate`: RDF predicate URI; `:xs_type`: One of:
-    #        `:string`, `:integer`, `:boolean`, `:anyURI`; `:solr_field`
+    #        `:string`, `:integer`, `:float`, `:boolean`, `:anyURI`;
+    #        `:solr_field`
     # @raise RuntimeError If any of the required options are missing
     #
     def self.rdf_property(name, options)
@@ -414,10 +415,15 @@ module ActiveMedusa
       # set values of subclass `rdf_property` definitions
       @@rdf_properties.select{ |p| p[:class] == self.class }.each do |prop|
         value = graph.any_object(prop[:predicate])
-        if prop[:xs_type] == :boolean
-          value = ['true', '1'].include?(value.to_s)
-        else
-          value = value.to_s
+        case prop[:xs_type]
+          when :boolean
+            value = ['true', '1'].include?(value.to_s)
+          when :integer
+            value = value.to_s.to_i
+          when :float
+            value = value.to_s.to_f
+          else
+            value = value.to_s
         end
         send("#{prop[:name]}=", value)
       end
