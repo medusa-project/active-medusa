@@ -70,7 +70,7 @@ module ActiveMedusa
               select{ |p| p[:class] == self and
                 p[:name].to_s == name_s.gsub(/find_by_/, '') }.first
           if prop
-            return self.where(prop[:solr_field] => args[0]).first
+            return self.where(prop[:solr_field] => args[0]).facet(false).first
           end
         end
         super
