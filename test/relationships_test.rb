@@ -40,6 +40,8 @@ class RelationshipsTest < Minitest::Test
 
   def test_belongs_to_creates_accessors
     bs = Bytestream.new
+    assert_nil bs.item
+
     item = Item.new
     bs.item = item
     assert_equal item, bs.item
