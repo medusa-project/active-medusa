@@ -173,6 +173,9 @@ module ActiveMedusa
           params['mlt.fl'] = Configuration.instance.solr_default_search_field
           params['mlt.mindf'] = 1
           params['mlt.mintf'] = 1
+          params['mlt.match.include'] = false
+          params['fq'] = "#{Configuration.instance.solr_class_field}:\""\
+          "#{@calling_class.entity_class_uri}\""
           endpoint = Configuration.instance.solr_more_like_this_endpoint.gsub(/\//, '')
         else
           endpoint = 'select'
