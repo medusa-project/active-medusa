@@ -101,6 +101,12 @@ class BaseTest < Minitest::Test
 
   # initialize
 
+  def test_initialize_requires_a_hash
+    assert_raises ArgumentError do
+      Item.new('cats')
+    end
+  end
+
   def test_initialize_should_ignore_id_and_uuid
     model = Item.new(id: 'cats', uuid: 'dogs')
     assert_nil model.id

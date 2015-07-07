@@ -201,8 +201,10 @@ module ActiveMedusa
 
     ##
     # @param params [Hash]
+    # @raise [ArgumentError]
     #
     def initialize(params = {})
+      raise ArgumentError, 'Invalid arguments' unless params.kind_of?(Hash)
       super() # call module initializers
       @destroyed = @loaded = @persisted = false
       params.except(*REJECT_PARAMS).each do |k, v|
