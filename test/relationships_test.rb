@@ -74,6 +74,14 @@ class RelationshipsTest < Minitest::Test
   # children
 
   def test_children
+    # item without children
+    item = Item.create!(parent_url: @config.fedora_url,
+                        requested_slug: SLUGS[4])
+    assert_equal 0, item.children.length
+    item.reload!
+    assert_equal 0, item.children.length
+
+    # item with children
     parent = Item.create!(parent_url: @config.fedora_url,
                           requested_slug: SLUGS[0])
     children = []
@@ -83,8 +91,10 @@ class RelationshipsTest < Minitest::Test
                              requested_slug: SLUGS[2])
     children << Item.create!(parent_url: parent.repository_url,
                              requested_slug: SLUGS[1])
+    Item.create!(parent_url: children.first.repository_url,
+                             requested_slug: SLUGS[3])
     parent.reload!
-    assert_equal children.length, parent.children.length
+    assert_equal 3, parent.children.length
   end
 
   # parent
