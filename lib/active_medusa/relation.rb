@@ -194,8 +194,7 @@ module ActiveMedusa
                 "repository: #{e.message}")
             @results.total_length -= 1
           rescue => e
-            Configuration.instance.logger.
-                error("Unable to load an object corresponding to #{doc['id']}")
+            Configuration.instance.logger.error("#{e} (#{doc['id']})")
             @results.total_length -= 1
           end
         end
