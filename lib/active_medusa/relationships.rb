@@ -119,10 +119,10 @@ module ActiveMedusa
         define_method(entities) do
           owned = @has_many_instances[entity_class] # Class => Relation
           unless owned
-            solr_rel_field = entity_class.associations.
-                select{ |a| a.source_class == self.class and
-                a.target_class == entity_class and
-                a.type == ActiveMedusa::Association::Type::HAS_MANY }.first.solr_field
+            solr_rel_field = self.class.associations.
+                select{ |a| a.source_class == entity_class and
+                a.target_class == self.class and
+                a.type == ActiveMedusa::Association::Type::BELONGS_TO }.first.solr_field
             owned = entity_class.where(solr_rel_field => self.repository_url)
             @has_many_instances[entity_class] = owned
           end
