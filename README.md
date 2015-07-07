@@ -20,9 +20,12 @@ sections of the Fedora wiki for more information.)
   or use existing ones.
 * Customizable Solr schema. Although some extra fields are required, their
   names are up to you.
-* Supports binary and container nodes.
+* Supports binary and container nodes, both of which are first-class, queryable
+  entities.
+* Direct access and mutation of entities' RDF graphs.
 * Supports "belongs-to" and "has-many" relationships between entities.
-* No-configuration support for node hierarchy traversal.
+* No-configuration support for node hierarchy traversal via automatic `parent`
+  and `children` methods on entities.
 
 # Limitations
 
@@ -94,7 +97,8 @@ Fedora needs to be configured to index its content in Solr. (See the
 Message Integrations]
 (https://wiki.duraspace.org/display/FEDORA41/Setup+Camel+Message+Integrations)
 sections of the Fedora wiki). Setting this up is beyond the scope of
-ActiveMedusa; but keep in mind that any Solr fields referred to in your `ActiveMedusa::Configuration` object, as well as any referred to in your
+ActiveMedusa; but keep in mind that any Solr fields referred to in your
+`ActiveMedusa::Configuration` object, as well as any referred to in your
 entities (see below), need to exist in Solr and be accounted for in your
 indexing transformation. In the example above, `searchall_txt` is presumably a
 dynamic `copyField` that the indexing transformation does not need to worry
@@ -104,9 +108,9 @@ either as regular or dynamic fields.
 ## Defining Entities
 
 Let's declare some entity/model classes. `Collection` and `Item` will
-correspond to Fedora 4 container nodes, and `Bytestream` will correspond to
+correspond to Fedora container nodes, and `Bytestream` will correspond to
 Fedora binary nodes. These are all common entities found in many repositories,
-but you could change the terminology to `Series` instead of `Collection`,
+but you could change the nomenclature to `Series` instead of `Collection`,
 and so on. Note that `Collection` and `Item` inherit from
 `ActiveMedusa::Container` while `Bytestream` inherits from
 `ActiveMedusa::Binary`. These are the two base classes from which all of your
@@ -127,7 +131,7 @@ end
 class Item < ActiveMedusa::Container
   entity_class_uri 'http://example.org/Item'
   has_many :items
-  has_many :bytestreams, predicate: 'http://example.org/hasBytestream'
+  has_many :bytestreams
   belongs_to :collection, predicate: 'http://example.org/isMemberOf',
              solr_field: :collection_s
   belongs_to :item, predicate: 'http://example.org/isChildOf',
@@ -176,7 +180,7 @@ a.k.a. compound objects). Note that both sides of the relationship must be
 specified, so for every `has_many` on an owning entity, there must be a
 `belongs_to` on the owned entity. The `belongs_to` side also requires a
 `:predicate` option that specifies what RDF predicate to use to store the
-relationship in Fedora, as does `has_many` when it refers to binaries.
+relationship in Fedora.
 
 *Note: If any of your entity classes reside in a namespace, you will need to
 add a `class_name` option to your relationship definitions:*
@@ -204,7 +208,7 @@ end
 repository until `save` is called on it.
 
 Before it can be saved, however, you must specify where in the Fedora node
-hierarchy you want it to reside. You can do that by setting its `parent_url`
+hierarchy you want it to reside. You do that by setting its `parent_url`
 property:
 
 ```ruby
@@ -227,24 +231,24 @@ Both of these methods accept a hash of properties as an argument.
 Bang versions (!) of `create` and `save` are available that will raise errors
 if anything goes wrong.
 
+Note that the constructor accepts any parameter defined in an `rdf_property`
+statement, as well as any `belongs_to` relationship.
+
 ### Establishing Relationships
 
-Establishing relationships between two new entities is a little awkward because
-both sides need to be saved first, in order to acquire repository URIs to use
-in the RDF triple that establishes the relationship. The process would go
-something like this:
+Establishing relationships between two new entities is easy:
 
 ```ruby
-item = Item.new(..)
-item.save!
 collection = Collection.new(..)
 collection.save!
-item.collection = collection
+item = Item.new(collection: collection)
 item.save!
 ```
 
-As of the current version, relationships must be set on the owned side. Doing
-something like `collection.items << item` is not possible.
+As of the current version, relationships must be set on the owned side, so
+doing something like `collection.items << item` is not possible. Also, notice
+that we had to save both entities separately. ActiveMedusa doesn't cascade
+these.
 
 ### Requesting a Slug 🐌
 
@@ -260,7 +264,7 @@ item.save!
 There is no guarantee, however, that the entity will actually receive this slug,
 and no error will be raised if it doesn't.
 
-For Fedora performance reasons, slugs are not advised.
+For reasons related to Fedora performance, slugs are not advised.
 
 ## Updating Entities
 
@@ -352,8 +356,6 @@ You would then need to call `item.save` to persist this change.
 * `updated_at` (returns the RDF object of `fedora:lastModified` as a `Time`
   object)
 * `repository_url` (returns the node's repository URI/URL)
-* `solr_representation` (returns the representation of the entity in Solr as a
-  hash)
 * `destroyed?`
 * `persisted?`
 
@@ -444,7 +446,8 @@ does in time. But it's best to simply not try to do it.*
 *Note 3: Binary entities are not searchable (see **Binary Entities**).*
 
 ```ruby
-items = Item.all.where(some_rdf_property: 'cats').where('arbitrary Solr query')
+items = Item.all.where(some_rdf_property: 'cats').
+    where('arbitrary Solr condition')
 ```
 
 Items are loaded when `to_a` is called, either explicitly or implicitly, such
