@@ -140,7 +140,7 @@ module ActiveMedusa
           raise "Unable to instantiate a(n) #{instantiable}"
         end
       else
-        raise "Unable to find a class associated with #{predicate}"
+        raise "Unable to find a class associated with this URI"
       end
       nil
     end
