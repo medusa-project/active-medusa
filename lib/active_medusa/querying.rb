@@ -33,6 +33,15 @@ module ActiveMedusa
       end
 
       ##
+      # @param id [String]
+      # @return [ActiveMedusa::Relation]
+      #
+      def find_by_id(id)
+        self.where(Configuration.instance.solr_uuid_field => id).
+            facet(false).first
+      end
+
+      ##
       # @param uri [String] Fedora resource URI
       # @return [ActiveMedusa::Relation]
       #
@@ -41,11 +50,13 @@ module ActiveMedusa
       end
 
       ##
+      # Alias of `find_by_id`.
+      #
       # @param uuid [String]
       # @return [ActiveMedusa::Relation]
       #
       def find_by_uuid(uuid)
-        self.where(Configuration.instance.solr_uuid_field => uuid).first
+        self.find_by_id(uuid)
       end
 
       def method_missing(name, *args, &block)
