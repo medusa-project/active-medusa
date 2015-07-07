@@ -56,10 +56,6 @@ module ActiveMedusa
     #                   context of query results; not persisted.
     attr_accessor :score
 
-    # @!attribute solr_representation
-    #   @return [Hash] Hash of the instance's representation in Solr.
-    attr_accessor :solr_representation
-
     # @!attribute transaction_url
     #   @return [String] URL of the transaction in which the entity exists.
     attr_accessor :transaction_url

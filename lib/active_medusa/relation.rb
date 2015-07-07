@@ -164,7 +164,7 @@ module ActiveMedusa
         params = {
             'q' => @where_clauses.join(' AND '),
             'df' => Configuration.instance.solr_default_search_field,
-            'fl' => '*,score',
+            'fl' => "#{Configuration.instance.solr_uri_field},score",
             'start' => @start,
             'sort' => @order,
             'rows' => @limit
@@ -173,7 +173,6 @@ module ActiveMedusa
           params['mlt.fl'] = Configuration.instance.solr_default_search_field
           params['mlt.mindf'] = 1
           params['mlt.mintf'] = 1
-          params['fl'] = "#{Configuration.instance.solr_uri_field},score"
           endpoint = Configuration.instance.solr_more_like_this_endpoint.gsub(/\//, '')
         else
           endpoint = 'select'
@@ -196,7 +195,6 @@ module ActiveMedusa
         docs.each do |doc|
           begin
             entity = ActiveMedusa::Base.load(doc['id'])
-            entity.solr_representation = doc
             entity.score = doc['score']
             @results << entity
           rescue HTTPClient::BadResponseError => e
