@@ -382,13 +382,16 @@ module ActiveMedusa
 
       # add properties from subclass belongs_to relationships
       belongs_to_instances.each do |entity_name, entity|
-        predicate = self.class.associations.
+        assoc = self.class.associations.
             select{ |a| a.source_class == self.class and
             a.type == ActiveMedusa::Association::Type::BELONGS_TO and
-            a.target_class == entity.class }.first.rdf_predicate
-        graph.delete([nil, RDF::URI(predicate), nil])
-        graph << [RDF::URI(), RDF::URI(predicate),
-                  RDF::URI(entity.repository_url)] if entity
+            a.target_class == entity.class }.first
+        if assoc
+          graph.delete([nil, RDF::URI(assoc.rdf_predicate), nil])
+          graph << [RDF::URI(), RDF::URI(assoc.rdf_predicate),
+                    RDF::URI(entity.repository_url)] if entity
+        end
+
       end
 
       graph
