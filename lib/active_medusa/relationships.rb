@@ -19,7 +19,7 @@ module ActiveMedusa
     module ClassMethods
 
       ##
-      # Set of `ActiveMedusa::Association`s
+      # [Set<ActiveMedusa::Association>]
       #
       @@associations = Set.new
 
@@ -113,7 +113,7 @@ module ActiveMedusa
         end
 
         ##
-        # @param entities [String|Symbol]
+        # @param entities [String, Symbol]
         # @return [ActiveMedusa::Relation]
         #
         define_method(entities) do
