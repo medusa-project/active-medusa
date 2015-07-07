@@ -73,6 +73,34 @@ class RelationshipsTest < Minitest::Test
     assert found
   end
 
+  # has_many
+
+  def test_cannot_have_many_children
+    assert_raises RuntimeError do
+      Item::has_many :children
+    end
+  end
+
+  def test_has_many_creates_accessors
+    collection = Collection.create!(parent_url: @config.fedora_url,
+                                    key: 'blabla')
+    assert_equal 0, collection.items.length
+
+    items = [Item.create!(parent_url: collection.repository_url,
+                          collection: collection),
+             Item.create!(parent_url: collection.repository_url,
+                          collection: collection),
+             Item.create!(parent_url: collection.repository_url,
+                          collection: collection)]
+    sleep 2
+    collection.reload!
+    assert_equal items.length, collection.items.length
+  end
+
+  def test_has_many_works
+    # TODO: write this
+  end
+
   # children
 
   def test_children
