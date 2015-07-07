@@ -82,8 +82,8 @@ module ActiveMedusa
 
         # Define a setter method to access the target of the relationship
         define_method("#{options[:name] || entity_class.to_s.underscore.split('/').last}=") do |owner|
-          raise 'Owner must descend from ActiveMedusa::Container' unless
-              owner.kind_of?(ActiveMedusa::Container)
+          raise 'Owner must descend from ActiveMedusa::Container' if owner and
+              !owner.kind_of?(ActiveMedusa::Container)
           @belongs_to_instances[entity_class] = owner # store a reference to the owner
         end
       end
