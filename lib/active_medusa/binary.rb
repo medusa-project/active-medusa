@@ -83,22 +83,26 @@ module ActiveMedusa
           raise 'Unable to save binary: both upload_pathname and '\
           'external_resource_url are nil.'
         end
+
         self.repository_url = nontransactional_url(
             response.header['Location'].first)
         @persisted = true
-        # if there are any triples in need of saving, copy them into the
-        # canonical graph and re-save
-        if self.rdf_graph.count > 0
-          graph_dup = RDF::Graph.new
-          self.rdf_graph.copy_into(graph_dup)
-          self.reload!
-          graph_dup.each_statement do |st|
-            self.rdf_graph << st
-          end
-          save_existing
-        else
-          self.reload!
+
+        # copy any triples/properties in need of saving into the canonical
+        # graph and re-save
+        backup_graph = RDF::Graph.new
+        self.rdf_graph.copy_into(backup_graph)
+
+        backup_props = {}
+        @@rdf_properties.select{ |p| p[:class] == self.class }.each do |prop|
+          backup_props[prop[:name]] = send(prop[:name])
         end
+
+        self.reload!
+
+        backup_props.each { |name, value| send("#{name}=", value) }
+        backup_graph.each_statement { |st| self.rdf_graph << st }
+        save_existing
       end
     end
 
