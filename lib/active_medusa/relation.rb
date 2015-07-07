@@ -23,12 +23,11 @@ module ActiveMedusa
       @facet = true
       @facet_queries = []
       @limit = nil
-      @loaded = false
       @more_like_this = false
       @order = nil
-      @results = ResultSet.new
       @start = 0
       @where_clauses = [] # will be joined by AND
+      reset_results
     end
 
     ##
@@ -43,6 +42,7 @@ module ActiveMedusa
     # @return [ActiveMedusa::Relation] self
     #
     def facet(fq)
+      reset_results
       if fq === false
         @facet = false
       elsif fq.blank?
@@ -65,6 +65,7 @@ module ActiveMedusa
     # @return [ActiveMedusa::Relation] self
     #
     def limit(limit)
+      reset_results
       @limit = limit
       self
     end
@@ -84,6 +85,7 @@ module ActiveMedusa
     # @return [ActiveMedusa::Relation] self
     #
     def more_like_this
+      reset_results
       @more_like_this = true
       @facet = false
       self
@@ -94,6 +96,7 @@ module ActiveMedusa
     # @return [ActiveMedusa::Entity] self
     #
     def order(order)
+      reset_results
       if order.kind_of?(Hash)
         order = "#{order.keys.first} #{order[order.keys.first]}"
       else
@@ -114,6 +117,7 @@ module ActiveMedusa
     # @return [ActiveMedusa::Entity] self
     #
     def start(start)
+      reset_results
       @start = start
       self
     end
@@ -123,6 +127,7 @@ module ActiveMedusa
     # @return [ActiveMedusa::Entity] self
     #
     def where(where)
+      reset_results
       if where.blank?
         # noop
       elsif where.kind_of?(Hash)
@@ -164,21 +169,29 @@ module ActiveMedusa
         }
         if @more_like_this
           params['mlt.fl'] = Configuration.instance.solr_default_search_field
-        elsif @facet
-          params[:facet] = true
-          params['facet.mincount'] = 1
-          params['facet.field'] = Configuration.instance.solr_facet_fields
-          params[:fq] = @facet_queries
+          endpoint = Configuration.instance.solr_more_like_this_endpoint.gsub(/\//, '')
+        else
+          endpoint = 'select'
+          if @facet
+            params[:facet] = true
+            params['facet.mincount'] = 1
+            params['facet.field'] = Configuration.instance.solr_facet_fields
+            params[:fq] = @facet_queries
+          end
         end
 
-        endpoint = @more_like_this ?
-            Configuration.instance.solr_more_like_this_endpoint.gsub(/\//, '') :
-            'select'
         @solr_response = Solr.client.get(endpoint, params: params)
-        @results.facet_fields = solr_facet_fields_to_objects(
-            @solr_response['facet_counts']['facet_fields']) if @facet
-        @results.total_length = @solr_response['response']['numFound'].to_i
-        @solr_response['response']['docs'].each do |doc|
+
+        if @more_like_this
+          @results.total_length = @solr_response['match']['docs'].length
+          docs = @solr_response['match']['docs']
+        else
+          @results.facet_fields = solr_facet_fields_to_objects(
+              @solr_response['facet_counts']['facet_fields']) if @facet
+          @results.total_length = @solr_response['response']['numFound'].to_i
+          docs = @solr_response['response']['docs']
+        end
+        docs.each do |doc|
           begin
             entity = ActiveMedusa::Base.load(doc['id'])
             entity.solr_representation = doc
@@ -200,6 +213,15 @@ module ActiveMedusa
         end
         @loaded = true
       end
+    end
+
+    ##
+    # Reverts the instance to an "un-executed" state.
+    #
+    def reset_results
+      @loaded = false
+      @results = ResultSet.new
+      @solr_response = nil
     end
 
     def solr_facet_fields_to_objects(fields)
