@@ -8,26 +8,11 @@ module ActiveMedusa
   # inherit.
   #
   class Container < Base
-    include Querying
-
-    # @!attribute binaries_to_add
-    #   @return [Set]
-    attr_reader :binaries_to_add
-
-    # @!attribute score
-    #   @return [Float] Float populated by `ActiveMedusa::Relation` in the
-    #                   context of query results; not persisted.
-    attr_accessor :score
-
-    # @!attribute solr_representation
-    #   @return [Hash] Hash of the instance's representation in Solr.
-    attr_accessor :solr_representation
 
     ##
     # @param params [Hash]
     #
     def initialize(params = {})
-      @binaries_to_add = Set.new
       @rdf_graph = new_rdf_graph
       super
     end

@@ -20,6 +20,7 @@ module ActiveMedusa
     extend ActiveModel::Callbacks
     include ActiveModel::Model
     include GlobalID::Identification
+    include Querying
     include Relationships
     include Transactions
 
@@ -49,6 +50,15 @@ module ActiveMedusa
     #   @return [String] The requested Fedora URI last path component for new
     #           entities.
     attr_accessor :requested_slug
+
+    # @!attribute score
+    #   @return [Float] Float populated by `ActiveMedusa::Relation` in the
+    #                   context of query results; not persisted.
+    attr_accessor :score
+
+    # @!attribute solr_representation
+    #   @return [Hash] Hash of the instance's representation in Solr.
+    attr_accessor :solr_representation
 
     # @!attribute transaction_url
     #   @return [String] URL of the transaction in which the entity exists.
@@ -379,25 +389,6 @@ module ActiveMedusa
                   RDF::URI(entity.repository_url)] if entity
       end
 
-      # add dependent binaries
-      self.class.associations.
-          select{ |a| a.source_class == self.class and
-              a.type == ActiveMedusa::Association::Type::HAS_MANY and
-              a.target_class.new.kind_of?(ActiveMedusa::Binary) }.map(&:name).each do |method|
-        (self.send(method) + self.binaries_to_add).each do |entity|
-          predicate = self.class.associations.
-              select{ |a| a.source_class == self.class and
-              a.type == ActiveMedusa::Association::Type::HAS_MANY and
-              a.target_class == entity.class }.first.rdf_predicate
-          if entity.repository_url
-            graph.delete([nil, RDF::URI(predicate), entity.repository_url])
-            graph << [RDF::URI(), RDF::URI(predicate),
-                      RDF::URI(entity.repository_url)]
-          end
-        end
-        self.binaries_to_add.clear
-      end
-
       graph
     end
 
@@ -426,20 +417,6 @@ module ActiveMedusa
             value = value.to_s
         end
         send("#{prop[:name]}=", value)
-      end
-
-      # add dependent binaries
-      self.class.associations.
-          select{ |a| a.source_class == self.class and
-          a.type == ActiveMedusa::Association::Type::HAS_MANY and
-          a.target_class.new.kind_of?(ActiveMedusa::Binary) }.each do |assoc|
-        has_binary_instances[assoc.target_class] ||= Set.new
-        graph.each_statement do |st|
-          if st.predicate.to_s == assoc.rdf_predicate
-            has_binary_instances[assoc.target_class] <<
-                assoc.target_class.new(repository_url: st.object.to_s) # TODO: initialize this properly
-          end
-        end
       end
 
       self.loaded = true
