@@ -1,18 +1,7 @@
 # ActiveMedusa
 
 ActiveMedusa provides a simple ActiveRecord-like interface to a Fedora 4
-repository, using Solr for lookup and querying. It relies on a strategy like
-[fcrepo-message-consumer](https://github.com/fcrepo4/fcrepo-message-consumer)
-or [fcrepo-camel](https://github.com/fcrepo4/fcrepo-camel) to synchronize Solr
-with your repository, and never writes to Solr itself. This means you need to
-either maintain an [indexing transformation]
-(https://wiki.duraspace.org/display/FEDORA41/Indexing+Transformations) or
-configure fcrepo-camel to route to some other endpoint that handles indexing.
-(See the [External Search]
-(https://wiki.duraspace.org/display/FEDORA41/External+Search) and
-[Setup Camel Message Integrations]
-(https://wiki.duraspace.org/display/FEDORA41/Setup+Camel+Message+Integrations)
-sections of the Fedora wiki for more information.)
+repository, using Solr for lookup and querying.
 
 # Features
 
@@ -89,32 +78,35 @@ end
 (If you are using Rails, you would put this in
 `config/initializers/active_medusa.rb`, and then restart your application.)
 
-### Configuring Fedora to populate Solr
+### Configuring a Solr update strategy
 
-Fedora needs to be configured to index its content in Solr. (See the
-[External Search]
-(https://wiki.duraspace.org/display/FEDORA41/External+Search) and [Setup Camel
-Message Integrations]
-(https://wiki.duraspace.org/display/FEDORA41/Setup+Camel+Message+Integrations)
-sections of the Fedora wiki). Setting this up is beyond the scope of
-ActiveMedusa; but keep in mind that any Solr fields referred to in your
-`ActiveMedusa::Configuration` object, as well as any referred to in your
-entities (see below), need to exist in Solr and be accounted for in your
-indexing transformation. In the example above, `searchall_txt` is presumably a
-dynamic `copyField` that the indexing transformation does not need to worry
-about, and likewise the `*_facet` fields; but all of the rest need to exist,
-either as regular or dynamic fields.
+ActiveMedusa does not write to Solr; you must come up with a way to maintain
+your Solr index without ActiveMedusa's help. One option would be to use a
+strategy like
+[fcrepo-message-consumer](https://github.com/fcrepo4/fcrepo-message-consumer)
+(deprecated) or [fcrepo-camel](https://github.com/fcrepo4/fcrepo-camel) which
+keep Solr updated by listening for changes in your repository.
+
+Another option would be to populate Solr from your application, such as by
+using `after_save` callbacks on your ActiveMedusa models.
+
+Getting this working is beyond the scope of ActiveMedusa; but keep in mind that
+any Solr fields referred to in your `ActiveMedusa::Configuration` object, as
+well as any referred to in your entities (see below), need to exist in Solr and
+be populated some way or other. In the example above, `searchall_txt` is
+presumably a dynamic `copyField` that Solr will populate itself, and likewise
+the `*_facet` fields; but all of the rest need to exist, either as regular or
+dynamic fields.
 
 ## Defining Entities
 
 Let's declare some entity/model classes. `Collection` and `Item` will
 correspond to Fedora container nodes, and `Bytestream` will correspond to
 Fedora binary nodes. These are all common entities found in many repositories,
-but you could change the nomenclature to `Series` instead of `Collection`,
-and so on. Note that `Collection` and `Item` inherit from
-`ActiveMedusa::Container` while `Bytestream` inherits from
-`ActiveMedusa::Binary`. These are the two base classes from which all of your
-entities must inherit.
+but you could change the nomenclature, or add other entities. Note that
+`Collection` and `Item` inherit from `ActiveMedusa::Container` while
+`Bytestream` inherits from `ActiveMedusa::Binary`. These are the two base
+classes from which all of your entities must inherit.
 
 ```ruby
 # collection.rb
@@ -602,7 +594,7 @@ commits and tags, and push the `.gem` file to
 inspect the query and see the raw Solr results. Use it like this:
 
 ```ruby
-items = Item.all.to_a # executes a Solr request
+items = Item.all.to_a # to_a executes the Solr request
 puts items.solr_response.inspect
 ```
 
