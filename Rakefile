@@ -13,42 +13,45 @@ task :default => :test
 
 desc 'Publish documentation'
 task :publish_docs do
-  # get the current git branch
-  starting_branch = nil
-  orphan_exists = false
-  `git branch`.each_line do |line|
-    branch = line[0].gsub('*', '').strip
-    if line[0] == '*'
-      starting_branch = branch
-    elsif branch == 'gh-pages'
-      orphan_exists = true
+  # make sure there are no outstanding changes before beginning
+  raise 'Outstanding changes' unless
+      `git status`.include?('nothing to commit, working directory clean')
+  begin
+    # get the current git branch
+    starting_branch = nil
+    orphan_exists = false
+    `git branch --no-color`.each_line do |line|
+      branch = line.gsub('*', '').strip
+      starting_branch = branch if line[0] == '*'
+      orphan_exists = true if branch == 'gh-pages'
     end
+
+    # generate docs
+    `yard`
+
+    # copy them to a temp dir
+    tmp_dir = Dir.tmpdir
+    FileUtils.cp_r('doc/yard', tmp_dir)
+
+    # switch to gh-pages branch
+    if orphan_exists
+      result = system('git checkout gh-pages')
+    else
+      result = system('git checkout --orphan gh-pages')
+    end
+    raise 'Failed to checkout gh-pages' unless result
+
+    # wipe it clean and copy the docs back into it
+    `git rm -rf .`
+    `cp -r #{File.join(tmp_dir, 'yard', '*')} .`
+
+    # commit and push
+    `git add *`
+    `git commit -m 'Update website'`
+    `git push origin gh-pages`
+  ensure
+    # cleanup
+    FileUtils.rm_rf(File.join(tmp_dir, 'yard'))
+    `git checkout #{starting_branch}`
   end
-
-  # generate docs
-  `yard`
-
-  # copy them to a temp dir
-  tmp_dir = Dir.tmpdir
-  FileUtils.cp_r('doc/yard', tmp_dir)
-
-  # switch to gh-pages branch
-  if orphan_exists
-    `git checkout gh-pages`
-  else
-    `git checkout --orphan gh-pages`
-  end
-
-  # wipe it clean and copy the docs back into it
-  `git rm -rf .`
-  `cp -r #{File.join(tmp_dir, 'yard', '*')} .`
-
-  # commit and push
-  `git add *`
-  `git commit -m 'Update website'`
-  `git push origin gh-pages`
-
-  # cleanup
-  FileUtils.rm_rf(File.join(tmp_dir, 'yard'))
-  `git checkout #{starting_branch}`
 end
