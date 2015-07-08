@@ -443,12 +443,14 @@ which will rarely be the case. An ugly way of getting around this is to `sleep`
 for a bit after saving an entity to wait for Solr to catch up - hoping that it
 does in time. But it's best to simply not try to do it.*
 
-*Note 3: Binary entities are not searchable (see **Binary Entities**).*
-
 ```ruby
 items = Item.all.where(some_rdf_property: 'cats').
-    where('arbitrary Solr condition')
+    where('arbitrary Solr condition').
+    filter('arbitrary Solr filter query')
 ```
+
+`where` corresponds to a Solr `q` parameter, and `filter` corresponds to a `fq`
+parameter.
 
 Items are loaded when `to_a` is called, either explicitly or implicitly, such
 as by `each`.

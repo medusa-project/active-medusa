@@ -23,8 +23,10 @@ module ActiveMedusa
       @calling_class = caller.kind_of?(Class) ? caller : caller.class
       @facet = true
       @facet_queries = []
+      @filter_clauses = [] # will be joined by AND
       @limit = nil
       @more_like_this = false
+      @omit_entity_query = false
       @order = nil
       @start = 0
       @where_clauses = [] # will be joined by AND
@@ -52,6 +54,23 @@ module ActiveMedusa
         @facet_queries += fq.reject{ |v| v.blank? }
       elsif fq.respond_to?(:to_s)
         @facet_queries << fq.to_s
+      end
+      self
+    end
+
+    ##
+    # @param fq [Hash, String]
+    # @return [ActiveMedusa::Entity] self
+    #
+    def filter(fq)
+      reset_results
+      if fq.blank?
+        # noop
+      elsif fq.kind_of?(Hash)
+        @filter_clauses += fq.reject{ |k, v| k.blank? or v.blank? }.
+            map{ |k, v| "#{k}:\"#{v}\"" }
+      elsif fq.respond_to?(:to_s)
+        @filter_clauses << fq.to_s
       end
       self
     end
@@ -91,6 +110,21 @@ module ActiveMedusa
       @more_like_this = true
       @facet = false
       self.where(Configuration.instance.solr_uri_field => @caller.repository_url)
+    end
+
+    ##
+    # Whether to omit the entity query from the Solr query. If false, calling
+    # something like `MyEntity.where(..)` will automatically limit the query to
+    # results of `MyEntity` type.
+    #
+    # The entity query is present by default.
+    #
+    # @param boolean [Boolean]
+    # @return [ActiveMedusa::Relation] self
+    #
+    def omit_entity_query(boolean)
+      @omit_entity_query = boolean
+      self
     end
 
     ##
@@ -155,7 +189,7 @@ module ActiveMedusa
       if @calling_class and !@loaded
         # if @calling_class is ActiveMedusa::Container, query across all
         # entities.
-        if @calling_class != ActiveMedusa::Container and
+        if !@omit_entity_query and @calling_class != ActiveMedusa::Container and
             @calling_class.respond_to?(:entity_class_uri)
           # limit the query to the calling class
           @where_clauses << "#{Configuration.instance.solr_class_field}:\""\
@@ -165,6 +199,7 @@ module ActiveMedusa
             'q' => @where_clauses.join(' AND '),
             'df' => Configuration.instance.solr_default_search_field,
             'fl' => "#{Configuration.instance.solr_uri_field},score",
+            'fq' => @filter_clauses.join(' AND '),
             'start' => @start,
             'sort' => @order,
             'rows' => @limit
