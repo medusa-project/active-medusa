@@ -30,8 +30,9 @@ task :publish_docs do
   `git checkout --orphan gh-pages`
   # wipe it clean and copy the docs back into it
   `git rm -rf .`
-  FileUtils.cp_r(File.join(tmp_dir, 'yard'), '.')
+  FileUtils.cp_r(File.join(tmp_dir, 'yard', '*'), '.')
   # commit and push
+  `git add *`
   `git commit -m 'Update website'`
   `git push origin gh-pages`
   # cleanup
