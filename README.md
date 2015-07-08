@@ -3,6 +3,9 @@
 ActiveMedusa provides a simple ActiveRecord-like interface to a Fedora 4
 repository, using Solr for lookup and querying.
 
+* **[GitHub home](https://github.com/medusa-project/active-medusa)**
+* **[API documentation](http://medusa-project.github.io/active-medusa/frames.html)**
+
 # Features
 
 * Basic and somewhat customizable RDF ontology. Create your own RDF predicates
