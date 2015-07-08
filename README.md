@@ -26,12 +26,12 @@ repository, using Solr for lookup and querying.
 * Can only set references on the owned side
 * Probably a lot more
 
-## Installation
+# Installation
 
 Currently ActiveMedusa is not available via rubygems. There are a couple of
 other options:
 
-### Refer to a local copy
+## Refer to a local copy
 
 Check out the code from GitHub and point to it in your application's Gemfile:
 
@@ -39,7 +39,7 @@ Check out the code from GitHub and point to it in your application's Gemfile:
 gem 'active-medusa', path: '/path/to/active_medusa'
 ```
 
-### Refer to the copy on GitHub
+## Refer to the copy on GitHub
 
 Add this line to your application's Gemfile:
 
