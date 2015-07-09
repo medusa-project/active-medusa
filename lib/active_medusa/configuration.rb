@@ -8,7 +8,6 @@ module ActiveMedusa
     @@instance = nil
 
     attr_accessor :fedora_url
-    attr_accessor :fedora_indexing_transformation
     attr_accessor :logger
     attr_accessor :class_predicate # must be indexed as :solr_class_field
     attr_accessor :solr_core
@@ -25,7 +24,6 @@ module ActiveMedusa
     end
 
     def initialize
-      self.fedora_indexing_transformation = 'default'
       self.solr_uri_field = :id
       self.solr_more_like_this_endpoint = '/mlt'
       yield self

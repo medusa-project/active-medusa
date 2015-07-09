@@ -10,14 +10,6 @@ module ActiveMedusa
   class Container < Base
 
     ##
-    # @param params [Hash]
-    #
-    def initialize(params = {})
-      @rdf_graph = new_rdf_graph
-      super
-    end
-
-    ##
     # @return [ActiveMedusa::Relation]
     #
     def more_like_this
@@ -53,27 +45,6 @@ module ActiveMedusa
         @persisted = true
         self.reload!
       end
-    end
-
-    private
-
-    ##
-    # @return [RDF::Graph]
-    #
-    def new_rdf_graph
-      graph = RDF::Graph.new
-      graph << RDF::Statement.new(
-          RDF::URI(),
-          RDF::URI('http://fedora.info/definitions/v4/indexing#hasIndexingTransformation'),
-          Configuration.instance.fedora_indexing_transformation.to_s)
-      graph << RDF::Statement.new(
-          RDF::URI(),
-          RDF::URI('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
-          RDF::URI('http://fedora.info/definitions/v4/indexing#Indexable'))
-      graph << RDF::Statement.new(
-          RDF::URI(), RDF::URI(Configuration.instance.class_predicate),
-          RDF::URI(self.class.entity_class_uri))
-      graph
     end
 
   end

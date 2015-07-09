@@ -203,6 +203,7 @@ module ActiveMedusa
       raise ArgumentError, 'Invalid arguments' unless params.kind_of?(Hash)
       super() # call module initializers
       @destroyed = @loaded = @persisted = false
+      @rdf_graph = new_rdf_graph
       params.except(*REJECT_PARAMS).each do |k, v|
         if k.to_sym == :rdf_graph
           # copy statements from the graph instead of overwriting the
@@ -349,6 +350,17 @@ module ActiveMedusa
         return graph
       end
       nil
+    end
+
+    ##
+    # @return [RDF::Graph]
+    #
+    def new_rdf_graph
+      graph = RDF::Graph.new
+      graph << RDF::Statement.new(
+          RDF::URI(), RDF::URI(Configuration.instance.class_predicate),
+          RDF::URI(self.class.entity_class_uri))
+      graph
     end
 
     ##

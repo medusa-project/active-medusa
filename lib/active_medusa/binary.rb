@@ -21,14 +21,6 @@ module ActiveMedusa
     attr_accessor :upload_pathname
 
     ##
-    # @param params [Hash]
-    #
-    def initialize(params = {})
-      @rdf_graph = new_rdf_graph
-      super
-    end
-
-    ##
     # Returns the PREMIS byte size, populated by the repository. Not available
     # until the instance has been persisted.
     #
@@ -104,19 +96,6 @@ module ActiveMedusa
         backup_graph.each_statement { |st| self.rdf_graph << st }
         save_existing
       end
-    end
-
-    private
-
-    ##
-    # @return [RDF::Graph]
-    #
-    def new_rdf_graph
-      graph = RDF::Graph.new
-      graph << RDF::Statement.new(
-          RDF::URI(), RDF::URI(Configuration.instance.class_predicate),
-          RDF::URI(self.class.entity_class_uri))
-      graph
     end
 
   end
