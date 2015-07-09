@@ -20,16 +20,6 @@ module ActiveMedusa
     #   @return [String]
     attr_accessor :upload_pathname
 
-    ##
-    # Returns the PREMIS byte size, populated by the repository. Not available
-    # until the instance has been persisted.
-    #
-    # @return [Integer]
-    #
-    def byte_size
-      self.rdf_graph.any_object('http://www.loc.gov/premis/rdf/v1#hasSize').to_i
-    end
-
     def repository_metadata_url
       self.repository_url ?
           "#{transactional_url(self.repository_url).chomp('/')}/fcr:metadata" :
