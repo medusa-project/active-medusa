@@ -123,7 +123,8 @@ module ActiveMedusa
                 select{ |a| a.source_class == entity_class and
                 a.target_class == self.class and
                 a.type == ActiveMedusa::Association::Type::BELONGS_TO }.first.solr_field
-            owned = entity_class.where(solr_rel_field => self.repository_url)
+            owned = entity_class.all.facet(false).
+                where(solr_rel_field => self.repository_url)
             @has_many_instances[entity_class] = owned
           end
           owned
@@ -133,6 +134,8 @@ module ActiveMedusa
     end
 
     ##
+    # Warning: this method is currently O(n).
+    #
     # @return [ActiveMedusa::Relation] Relation of all LDP children for which
     # there exist corresponding `ActiveMedusa::Base` subclasses.
     #
