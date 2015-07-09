@@ -5,11 +5,9 @@ module ActiveMedusa
   module Relationships
 
     attr_reader :belongs_to_instances
-    attr_reader :has_many_instances
 
     def initialize
       @belongs_to_instances = {} # Class => entity instance
-      @has_many_instances = {} # Class => ActiveMedusa::Relation
     end
 
     def self.included(base)
@@ -117,17 +115,12 @@ module ActiveMedusa
         # @return [ActiveMedusa::Relation]
         #
         define_method(entities) do
-          owned = @has_many_instances[entity_class] # Class => Relation
-          unless owned
-            solr_rel_field = self.class.associations.
-                select{ |a| a.source_class == entity_class and
-                a.target_class == self.class and
-                a.type == ActiveMedusa::Association::Type::BELONGS_TO }.first.solr_field
-            owned = entity_class.all.facet(false).
-                where(solr_rel_field => self.repository_url)
-            @has_many_instances[entity_class] = owned
-          end
-          owned
+          solr_rel_field = self.class.associations.
+              select{ |a| a.source_class == entity_class and
+              a.target_class == self.class and
+              a.type == ActiveMedusa::Association::Type::BELONGS_TO }.first.solr_field
+          entity_class.all.facet(false).
+              where(solr_rel_field => self.repository_url)
         end
       end
 
