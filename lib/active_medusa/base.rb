@@ -79,6 +79,7 @@ module ActiveMedusa
     ##
     # @param params [Hash]
     # @return [ActiveMedusa::Base]
+    # @raise [ActiveMedusa::RecordInvalid]
     #
     def self.create(params = {})
       instance = self.new(params)
@@ -89,6 +90,7 @@ module ActiveMedusa
     ##
     # @param params [Hash]
     # @return [ActiveMedusa::Base]
+    # @raise [ActiveMedusa::RecordInvalid]
     #
     def self.create!(params = {})
       instance = self.new(params)
@@ -279,7 +281,7 @@ module ActiveMedusa
     # (for new entities).
     #
     # @raise [RuntimeError]
-    # @raise [ActiveModel::ValidationError]
+    # @raise [ActiveMedusa::RecordInvalid]
     #
     def save
       raise 'Cannot save a destroyed object.' if self.destroyed?
@@ -301,7 +303,7 @@ module ActiveMedusa
     ##
     # @param params [Hash]
     # @raise [RuntimeError]
-    # @raise [ActiveModel::ValidationError]
+    # @raise [ActiveMedusa::RecordInvalid]
     #
     def update(params)
       params.except(*REJECT_PARAMS).each do |k, v|
@@ -313,7 +315,7 @@ module ActiveMedusa
     ##
     # @param params [Hash]
     # @raise [RuntimeError]
-    # @raise [ActiveModel::ValidationError]
+    # @raise [ActiveMedusa::RecordInvalid]
     #
     def update!(params)
       params.except(*REJECT_PARAMS).each do |k, v|
@@ -440,12 +442,12 @@ module ActiveMedusa
     # Saves an existing node.
     #
     # @raise [RuntimeError]
-    # @raise [ActiveModel::ValidationError]
+    # @raise [ActiveMedusa::RecordInvalid]
     #
     def save_existing
       run_callbacks :update do
         populate_outgoing_graph(self.rdf_graph)
-        raise ActiveModel::ValidationError unless self.valid?
+        raise ActiveMedusa::RecordInvalid unless self.valid?
         url = transactional_url(self.repository_metadata_url)
         body = self.rdf_graph.to_ttl
         headers = { 'Content-Type' => 'text/turtle' }

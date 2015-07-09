@@ -28,12 +28,12 @@ module ActiveMedusa
     # instance's `rdf_graph` with a GET to its `repository_url`.
     #
     # @raise [RuntimeError]
-    # @raise [ActiveModel::ValidationError]
+    # @raise [ActiveMedusa::RecordInvalid]
     #
     def save_new
       run_callbacks :create do
         populate_outgoing_graph(self.rdf_graph)
-        raise ActiveModel::ValidationError unless self.valid?
+        raise ActiveMedusa::RecordInvalid unless self.valid?
         url = transactional_url(self.parent_url)
         body = self.rdf_graph.to_ttl
         headers = { 'Content-Type' => 'text/turtle' }

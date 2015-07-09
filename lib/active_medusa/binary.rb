@@ -33,11 +33,11 @@ module ActiveMedusa
     # instance's `rdf_graph` with a GET to its `fcr:metadata`.
     #
     # @raise [RuntimeError]
-    # @raise [ActiveModel::ValidationError]
+    # @raise [ActiveMedusa::RecordInvalid]
     #
     def save_new
       run_callbacks :create do
-        raise ActiveModel::ValidationError unless self.valid?
+        raise ActiveMedusa::RecordInvalid unless self.valid?
         response = nil
         if self.upload_pathname
           File.open(self.upload_pathname) do |file|
