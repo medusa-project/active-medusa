@@ -8,13 +8,14 @@ repository, using Solr for lookup and querying.
 
 # Features
 
+* ActiveRecord-like syntax for CRUD and querying.
 * Basic and somewhat customizable RDF ontology. Create your own RDF predicates
   or use existing ones.
 * Customizable Solr schema. Although some extra fields are required, their
   names are up to you.
 * Supports binary and container nodes, both of which are first-class, queryable
   entities.
-* Direct access and mutation of entities' RDF graphs.
+* Direct read/write access to entities' RDF graphs.
 * Supports "belongs-to" and "has-many" relationships between entities.
 * No-configuration support for node hierarchy traversal via automatic `parent`
   and `children` methods on entities.
@@ -39,27 +40,31 @@ Check out the code from GitHub and point to it in your application's Gemfile:
 gem 'active-medusa', path: '/path/to/active_medusa'
 ```
 
-## Refer to the copy on GitHub
+## Refer to a copy on GitHub
 
-Add this line to your application's Gemfile:
+Add one of these lines to your application's Gemfile, depending on what you'd
+like to work with:
 
 ```ruby
+# bleeding-edge
 gem 'active-medusa', github: 'medusa-project/active-medusa'
+# release branch
+gem 'active-medusa', github: 'medusa-project/active-medusa', branch: 'master'
+# a particular release
+gem 'active-medusa', github: 'medusa-project/active-medusa', tag: '1.0.0'
 ```
 
 Then execute:
 
     $ bundle
 
-Or install it yourself as:
-
-    $ gem install active-medusa
-
 # Usage
 
 ## Initializing
 
-ActiveMedusa needs to know some stuff about your setup. Tell it like this:
+ActiveMedusa needs to know some stuff about your setup. You can tell it like
+this. Documentation of each option is available
+[here](http://medusa-project.github.io/active-medusa/ActiveMedusa/Configuration.html).
 
 ```ruby
 ActiveMedusa::Configuration.new do |config|
