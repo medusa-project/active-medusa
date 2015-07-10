@@ -159,10 +159,10 @@ module ActiveMedusa
     #                  xs_type: :string, solr_field: 'full_text'
     #
     # @param name [Symbol] Property name
-    # @param options [Hash] Hash with the following keys:
-    #        `:predicate`: RDF predicate URI; `:xs_type`: One of:
-    #        `:string`, `:integer`, `:float`, `:boolean`, `:anyURI`;
-    #        `:solr_field`
+    # @param options [Hash] Options hash.
+    # @option options [String] :predicate RDF predicate URI.
+    # @option options [Symbol] :xs_type One of: `:string`, `:integer`,
+    #   `:float`, `:boolean`, `:anyURI`; `:solr_field`.
     # @raise RuntimeError If any of the required options are missing
     #
     def self.rdf_property(name, options)
@@ -233,10 +233,16 @@ module ActiveMedusa
     end
 
     ##
-    # @param also_tombstone [Boolean]
+    # Destroys the instance's corresponding repository node, marks the instance
+    # as destroyed, and freezes it. Also cascades these operations to all
+    # dependent `has_many` instances.
+    #
+    # @param options [Hash] Options hash
+    # @option options [Boolean] :also_tombstone Also deletes the repository
+    #   node's `fcr:tombstone`.
     # @return [Boolean]
     #
-    def destroy(also_tombstone = false)
+    def destroy(options = {})
       if @persisted and !@destroyed
         url = transactional_url(self.repository_url)
         if url
@@ -244,9 +250,10 @@ module ActiveMedusa
             url = url.chomp('/')
             client = Fedora.client
             client.delete(url)
-            client.delete("#{url}/fcr:tombstone") if also_tombstone
+            client.delete("#{url}/fcr:tombstone") if options[:also_tombstone]
             @destroyed = true
             @persisted = false
+            self.freeze
           end
         end
         return true

@@ -141,21 +141,22 @@ class BaseTest < Minitest::Test
     end
   end
 
-  # delete
+  # destroy
 
-  def test_delete_should_delete
+  def test_destroy_should_destroy
     item = Item.create!(parent_url: @config.fedora_url,
                         requested_slug: SLUGS[0])
-    item.delete
+    item.destroy
     assert item.destroyed?
+    assert item.frozen?
     assert_equal 410, @http.get("#{@config.fedora_url}/#{SLUGS[0]}").status
     assert_equal 405, @http.get("#{@config.fedora_url}/#{SLUGS[0]}/fcr:tombstone").status
   end
 
-  def test_delete_also_tombstone_parameter_should_work
+  def test_destroy_also_tombstone_parameter_should_work
     item = Item.create!(parent_url: @config.fedora_url,
                         requested_slug: SLUGS[0])
-    item.delete(true)
+    item.destroy(also_tombstone: true)
     assert item.destroyed?
     assert_equal 404, @http.get("#{@config.fedora_url}/#{SLUGS[0]}").status
     assert_equal 405, @http.get("#{@config.fedora_url}/#{SLUGS[0]}/fcr:tombstone").status
@@ -164,7 +165,7 @@ class BaseTest < Minitest::Test
   def test_destroy_callbacks
     item = Item.create(parent_url: @config.fedora_url,
                        requested_slug: SLUGS[0])
-    item.delete
+    item.destroy
     assert item.instance_variable_get('@before_destroy_called')
     assert item.instance_variable_get('@after_destroy_called')
   end
