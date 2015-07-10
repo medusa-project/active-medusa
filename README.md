@@ -553,6 +553,9 @@ ActiveRecord validation methods on your ActiveMedusa entities.
 The only catch is that a property must be an `rdf_property` in order to be
 validatable.
 
+Also be aware that validation failures will raise an
+`ActiveMedusa::RecordInvalid` instead of an `ActiveRecord::RecordInvalid`.
+
 ## Forms
 
 Because `ActiveMedusa::Base` includes `ActiveModel::Model`, your ActiveMedusa
