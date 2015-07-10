@@ -236,7 +236,7 @@ module ActiveMedusa
     # @param also_tombstone [Boolean]
     # @return [Boolean]
     #
-    def delete(also_tombstone = false)
+    def destroy(also_tombstone = false)
       if @persisted and !@destroyed
         url = transactional_url(self.repository_url)
         if url
@@ -254,8 +254,8 @@ module ActiveMedusa
       false
     end
 
-    alias_method :destroy, :delete
-    alias_method :destroy!, :delete
+    alias_method :destroy!, :destroy
+    alias_method :delete, :destroy
 
     ##
     # @return [Boolean]
