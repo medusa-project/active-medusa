@@ -66,11 +66,10 @@ module ActiveMedusa
           return Relation.new(self).send(name, *args, &block)
         elsif name_s.start_with?('find_by_')
           # handle find_by_x calls
-          prop = self.rdf_properties.
-              select{ |p| p[:class] == self and
-                p[:name].to_s == name_s.gsub(/find_by_/, '') }.first
+          prop = self.properties.select{ |p| p.class == self and
+              p.name.to_s == name_s.gsub(/find_by_/, '') }.first
           if prop
-            return self.where(prop[:solr_field] => args[0]).facet(false).first
+            return self.where(prop.solr_field => args[0]).facet(false).first
           end
         end
         super
@@ -88,8 +87,8 @@ module ActiveMedusa
         if %w(count first limit order start where).include?(method_name_s)
           return true
         elsif method_name_s.start_with?('find_by_') and
-            self.rdf_properties.select{ |p| p[:class] == self and
-                p[:name].to_s == method_name_s.gsub(/find_by_/, '') }.any?
+            self.properties.select{ |p| p.class == self and
+                p.name.to_s == method_name_s.gsub(/find_by_/, '') }.any?
           return true
         end
         super

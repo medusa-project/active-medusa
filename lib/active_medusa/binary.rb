@@ -76,8 +76,8 @@ module ActiveMedusa
         self.rdf_graph.copy_into(backup_graph)
 
         backup_props = {}
-        @@rdf_properties.select{ |p| p[:class] == self.class }.each do |prop|
-          backup_props[prop[:name]] = send(prop[:name])
+        @@properties.select{ |p| p.class == self.class }.each do |prop|
+          backup_props[prop.name] = send(prop.name)
         end
 
         self.reload!

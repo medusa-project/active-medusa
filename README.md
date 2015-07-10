@@ -121,10 +121,10 @@ classes from which all of your entities must inherit.
 class Collection < ActiveMedusa::Container
   entity_class_uri 'http://example.org/Collection'
   has_many :items
-  rdf_property :title,
-               xs_type: :string,
-               predicate: 'http://purl.org/dc/elements/1.1/title',
-               solr_field: 'title_s'
+  property :title,
+           type: :string,
+           rdf_predicate: 'http://purl.org/dc/elements/1.1/title',
+           solr_field: 'title_s'
 end
 
 # item.rb
@@ -136,10 +136,10 @@ class Item < ActiveMedusa::Container
              solr_field: :collection_s
   belongs_to :item, predicate: 'http://example.org/isChildOf',
              solr_field: 'parent_s', name: 'parent'
-  rdf_property :full_text,
-               xs_type: :string,
-               predicate: 'http://example.org/fullText',
-               solr_field: 'full_text_txt'
+  property :full_text,
+           type: :string,
+           rdf_predicate: 'http://example.org/fullText',
+           solr_field: 'full_text_txt'
 end
 
 # bytestream.rb
@@ -158,16 +158,16 @@ object of a triple whose predicate is the value of
 
 ### Defining Properties
 
-`rdf_property` is a convenience method that maps entity properties to an
+`property` is a convenience method that maps entity properties to an
 instance's RDF graph and creates accessor and finder methods for them. It also
 enables bonus features like validation, `find_by_x`, auto-generated accessors,
 and ability to use the properties in `create` and `update` calls.
 
-`rdf_property` predicates must be unique and can only be used in one triple per
+`property` predicates must be unique and can only be used in one triple per
 entity graph.
 
 You do not need to define all, or any, of an entity's properties with
-`rdf_property`. If you prefer, you can manually mutate an instance's
+`property`. If you prefer, you can manually mutate an instance's
 `RDF::Graph` instance, accessible via `rdf_graph`. But in that case, you
 wouldn't get the bonus features.
 
@@ -231,7 +231,7 @@ Both of these methods accept a hash of properties as an argument.
 Bang versions (!) of `create` and `save` are available that will raise errors
 if anything goes wrong.
 
-Note that the constructor accepts any parameter defined in an `rdf_property`
+Note that the constructor accepts any parameter defined in a `property`
 statement, as well as any `belongs_to` relationship.
 
 ### Establishing Relationships
@@ -269,11 +269,11 @@ For reasons related to Fedora performance, slugs are not advised.
 ## Updating Entities
 
 Call `update` on an entity. (Bang version [!] also available.) This method
-accepts a parameter list into which you can pass any updated `rdf_property`
+accepts a parameter list into which you can pass any updated `property`
 value:
 
 ```ruby
-item.update(some_rdf_property: 55)
+item.update(some_property: 55)
 ```
 
 ## Deleting Entities
@@ -303,7 +303,7 @@ item = Item.find_by_uri('http://localhost:8080/fcrepo/rest/kumquats')
 ```
 
 Then, there are the `find_by_x` methods, where `x` corresponds to some
-`rdf_property`:
+`property`:
 
 ```ruby
 item = Item.find_by_title('2003 Global Outlook for 6-Quart Slow-Cookers')
@@ -444,7 +444,7 @@ for a bit after saving an entity to wait for Solr to catch up - hoping that it
 does in time. But it's best to simply not try to do it.*
 
 ```ruby
-items = Item.all.where(some_rdf_property: 'cats').
+items = Item.all.where(some_property: 'cats').
     where('arbitrary Solr condition').
     filter('arbitrary Solr filter query')
 ```
@@ -550,7 +550,7 @@ have been committed.)
 validation functionality that ActiveRecord enjoys. So, you can use
 ActiveRecord validation methods on your ActiveMedusa entities.
 
-The only catch is that a property must be an `rdf_property` in order to be
+The only catch is that a property must be a `property` in order to be
 validatable.
 
 Also be aware that validation failures will raise an

@@ -65,7 +65,7 @@ class QueryingTest < Minitest::Test
     assert_nil Item.find_by_uuid('nonexistent uuid')
   end
 
-  def test_find_by_rdf_property
+  def test_find_by_property
     assert_instance_of Item, Item.find_by_full_text('lorem ipsum')
     assert_nil Item.find_by_full_text('nonexistent full text')
   end

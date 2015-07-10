@@ -1,5 +1,6 @@
 require 'active_medusa/association'
 require 'active_medusa/fedora'
+require 'active_medusa/property'
 require 'active_medusa/querying'
 require 'active_medusa/solr'
 require 'active_medusa/relationships'
@@ -30,7 +31,7 @@ module ActiveMedusa
                            only: [:after, :before]
 
     @@entity_class_uris = Set.new
-    @@rdf_properties = Set.new
+    @@properties = Set.new
 
     # @!attribute parent_url
     #   @return [String] The URL of the entity's parent container.
@@ -144,33 +145,34 @@ module ActiveMedusa
     end
 
     ##
-    # @return [Set] Set of hashes with the following keys:
-    #        `:class`, `:name`, `:predicate`, `:xs_type`, `:solr_field`
+    # @return [Set<ActiveMedusa::Property>]
     #
-    def self.rdf_properties
-      @@rdf_properties
+    def self.properties
+      @@properties
     end
 
     ##
     # Supplies a "property" keyword to subclasses which maps a Ruby property to
     # an RDF predicate and Solr field. Example:
     #
-    #     rdf_property :full_text, predicate: 'http://example.org/fullText',
-    #                  xs_type: :string, solr_field: 'full_text'
+    #     property :full_text, rdf_predicate: 'http://example.org/fullText',
+    #              type: :string, solr_field: 'full_text'
     #
     # @param name [Symbol] Property name
     # @param options [Hash] Options hash.
-    # @option options [String] :predicate RDF predicate URI.
-    # @option options [Symbol] :xs_type One of: `:string`, `:integer`,
-    #   `:float`, `:boolean`, `:anyURI`; `:solr_field`.
-    # @raise RuntimeError If any of the required options are missing
+    # @option options [String] :rdf_predicate RDF predicate URI.
+    # @option options [Symbol] :type One of: `:string`, `:integer`,
+    #   `:float`, `:boolean`, `:anyURI`
+    # @option options [Symbol, String] :solr_field The Solr field in which
+    #   the property is indexed.
+    # @raise [RuntimeError] If any of the required options are missing
     #
-    def self.rdf_property(name, options)
-      [:predicate, :xs_type, :solr_field].each do |opt|
-        raise "rdf_property statement is missing #{opt} option" unless
+    def self.property(name, options)
+      [:rdf_predicate, :type, :solr_field].each do |opt|
+        raise "property statement is missing #{opt} option" unless
             options.has_key?(opt)
       end
-      @@rdf_properties << options.merge(class: self, name: name)
+      @@properties << Property.new(options.merge(class: self, name: name))
       instance_eval { attr_accessor name }
     end
 
@@ -356,14 +358,14 @@ module ActiveMedusa
     # @return [RDF::Graph] Input graph
     #
     def populate_outgoing_graph(graph)
-      # add properties from subclass rdf_property definitions
-      @@rdf_properties.select{ |p| p[:class] == self.class }.each do |prop|
-        graph.delete([nil, RDF::URI(prop[:predicate]), nil])
-        value = send(prop[:name])
-        case prop[:xs_type].to_sym
+      # add properties from subclass property definitions
+      @@properties.select{ |p| p.class == self.class }.each do |prop|
+        graph.delete([nil, RDF::URI(prop.rdf_predicate), nil])
+        value = send(prop.name)
+        case prop.type.to_sym
           when :boolean
             if value != nil
-              value = ['true', '1'].include?(value.to_s) ? 'true' : 'false'
+              value = %w(true, 1).include?(value.to_s) ? 'true' : 'false'
             end
           when :anyURI
             value = RDF::URI(value)
@@ -371,7 +373,7 @@ module ActiveMedusa
             value = value.to_s
         end
         graph << RDF::Statement.new(
-            RDF::URI(), RDF::URI(prop[:predicate]), value) if value.present?
+            RDF::URI(), RDF::URI(prop.rdf_predicate), value) if value.present?
       end
 
       # add properties from subclass belongs_to relationships
@@ -402,12 +404,12 @@ module ActiveMedusa
       self.uuid = graph.any_object('http://fedora.info/definitions/v4/repository#uuid').to_s
       self.parent_url = graph.any_object('http://fedora.info/definitions/v4/repository#hasParent').to_s
 
-      # set values of subclass `rdf_property` definitions
-      @@rdf_properties.select{ |p| p[:class] == self.class }.each do |prop|
-        value = graph.any_object(prop[:predicate])
-        case prop[:xs_type]
+      # set values of subclass `property` definitions
+      @@properties.select{ |p| p.class == self.class }.each do |prop|
+        value = graph.any_object(prop.rdf_predicate)
+        case prop.type
           when :boolean
-            value = ['true', '1'].include?(value.to_s)
+            value = %w(true 1).include?(value.to_s)
           when :integer
             value = value.to_s.to_i
           when :float
@@ -415,7 +417,7 @@ module ActiveMedusa
           else
             value = value.to_s
         end
-        send("#{prop[:name]}=", value)
+        send("#{prop.name}=", value)
       end
 
       self.loaded = true

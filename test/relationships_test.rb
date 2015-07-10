@@ -34,7 +34,7 @@ class RelationshipsTest < Minitest::Test
 
   def test_cannot_belong_to_parent
     assert_raises RuntimeError do
-      Item::belongs_to :parent, predicate: 'bla', solr_field: 'bla'
+      Item::belongs_to :parent, rdf_predicate: 'bla', solr_field: 'bla'
     end
   end
 

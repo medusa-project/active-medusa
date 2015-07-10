@@ -30,15 +30,18 @@ module ActiveMedusa
 
       ##
       # @param entity [Symbol] `ActiveMedusa::Base` subclass name
-      # @param options [Hash] Hash with the following required keys:
-      #                `:predicate`, `:solr_field`; and the following optional
-      #                keys: `:name` (specifies the name of the accessor
-      #                 method), `:class_name`
+      # @param options [Hash] Options hash.
+      # @option options [String] :rdf_predicate
+      # @option options [String, Symbol] :solr_field
+      # @option options [String, Symbol] :name Specifies the name of the
+      #   accessor method (optional).
+      # @option options [String] :class_name Specifies the name of the owning
+      #   class (optional).
       #
       def belongs_to(entity, options)
         raise 'Cannot define a `belongs_to` relationship named `parent`.' if
             [options[:name], entity].map{ |e| e.to_s.downcase }.include?('parent')
-        [:predicate, :solr_field].each do |opt|
+        [:rdf_predicate, :solr_field].each do |opt|
           raise "belongs_to statement is missing #{opt} option" unless
               options.has_key?(opt)
         end
@@ -51,12 +54,9 @@ module ActiveMedusa
         self_ = self
         self.class.instance_eval do
           @@associations << ActiveMedusa::Association.new(
-              name: options[:name],
-              rdf_predicate: options[:predicate],
-              solr_field: options[:solr_field],
-              source_class: self_,
-              type: ActiveMedusa::Association::Type::BELONGS_TO,
-              target_class: entity_class)
+              options.merge(source_class: self_,
+                            type: ActiveMedusa::Association::Type::BELONGS_TO,
+                            target_class: entity_class))
         end
 
         # Define a lazy getter method to access the target of the relationship
@@ -88,9 +88,9 @@ module ActiveMedusa
 
       ##
       # @param entities [Symbol] Pluralized `ActiveMedusa::Container` subclass
-      #                 name
-      # @param options [Hash] Hash with the following keys:
-      #                `:class_name` [String] (optional)
+      #   name
+      # @param options [Hash] Options hash.
+      # @option options [String] :class_name (Optional)
       #
       def has_many(entities, options = {})
         raise 'Cannot define a `has_many` relationship named `children`.' if

@@ -59,17 +59,17 @@ class BaseTest < Minitest::Test
     end
   end
 
-  # rdf_property
+  # property
 
-  def test_rdf_property_creates_accessor
+  def test_property_creates_accessor
     item = Item.new
     item.full_text = 'cats'
     assert_equal 'cats', item.full_text
   end
 
-  def test_rdf_property_requires_certain_options
+  def test_property_requires_certain_options
     assert_raises RuntimeError do
-      Item::rdf_property :something, invalid: 'bla', invalid2: 'bla'
+      Item::property :something, invalid: 'bla', invalid2: 'bla'
     end
   end
 
@@ -94,7 +94,7 @@ class BaseTest < Minitest::Test
     assert !item.instance_variable_get('@persisted')
   end
 
-  def test_initialize_should_accept_rdf_properties
+  def test_initialize_should_accept_properties
     text = 'test test test'
     item = Item.new(full_text: text)
     assert_equal text, item.full_text
