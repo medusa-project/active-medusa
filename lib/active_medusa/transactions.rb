@@ -45,6 +45,29 @@ module ActiveMedusa
         http_client.post(id + '/fcr:tx/fcr:rollback')
       end
 
+      ##
+      # Executes a block within a transaction. Use like:
+      #
+      #     ActiveMedusa::Base.transaction do |tx_url|
+      #       # Code to run within the transaction.
+      #       # Any raised errors will cause an automatic rollback.
+      #     end
+      #
+      # @raise [RuntimeError]
+      #
+      def transaction
+        client = Fedora.client
+        url = create_transaction(client)
+        begin
+          yield url
+        rescue => e
+          rollback_transaction(url, client)
+          raise e
+        else
+          commit_transaction(url, client)
+        end
+      end
+
     end
 
     ##

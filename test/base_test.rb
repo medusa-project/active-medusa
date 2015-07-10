@@ -73,32 +73,6 @@ class BaseTest < Minitest::Test
     end
   end
 
-  # transaction
-
-  def test_transaction
-    non_tx_url = "#{@config.fedora_url}/#{SLUGS[0]}"
-    ActiveMedusa::Base.transaction do |tx_url|
-      item = Item.create!(parent_url: @config.fedora_url,
-                          requested_slug: SLUGS[0])
-      assert_equal 200,
-                   @http.get(item.transactional_url(item.repository_url)).status
-    end
-    assert_equal 200, @http.get(non_tx_url).status
-  end
-
-  def test_transaction_rolls_back_on_error
-    # assert that an item created in a transaction does not exist outside the
-    # transaction
-    non_tx_url = "#{@config.fedora_url}/#{SLUGS[0]}"
-    assert_raises RuntimeError do
-      ActiveMedusa::Base.transaction do |tx_url|
-        Item.create!(parent_url: @config.fedora_url, requested_slug: SLUGS[0])
-        raise 'oops'
-      end
-    end
-    assert_equal 404, @http.get(non_tx_url).status
-  end
-
   # initialize
 
   def test_initialize_requires_a_hash
