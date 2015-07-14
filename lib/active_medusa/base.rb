@@ -365,7 +365,7 @@ module ActiveMedusa
         case prop.type.to_sym
           when :boolean
             if value != nil
-              value = %w(true, 1).include?(value.to_s) ? 'true' : 'false'
+              value = %w(true 1).include?(value.to_s) ? 'true' : 'false'
             end
           when :anyURI
             value = RDF::URI(value)
