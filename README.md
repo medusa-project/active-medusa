@@ -48,7 +48,7 @@ like to work with:
 ```ruby
 # bleeding-edge
 gem 'active-medusa', github: 'medusa-project/active-medusa'
-# release branch
+# the latest release
 gem 'active-medusa', github: 'medusa-project/active-medusa', branch: 'master'
 # a particular release
 gem 'active-medusa', github: 'medusa-project/active-medusa', tag: '1.0.0'
@@ -88,33 +88,30 @@ end
 
 ### Configuring a Solr update strategy
 
-ActiveMedusa does not write to Solr; you must come up with a way to maintain
-your Solr index without ActiveMedusa's help. One option would be to use a
-strategy like
-[fcrepo-message-consumer](https://github.com/fcrepo4/fcrepo-message-consumer)
+ActiveMedusa does not write to Solr; you must devise a way to maintain your
+Solr index without ActiveMedusa's help. One option would be to use a strategy
+like [fcrepo-message-consumer](https://github.com/fcrepo4/fcrepo-message-consumer)
 (deprecated) or [fcrepo-camel](https://github.com/fcrepo4/fcrepo-camel) which
-keep Solr updated by listening for changes in your repository.
-
-Another option would be to populate Solr from your application, such as by
-using `after_save` callbacks on your ActiveMedusa models.
+keep Solr updated by listening for changes in your repository. Another option
+would be to populate Solr from your application, such as by using `after_save` callbacks on your ActiveMedusa models.
 
 Getting this working is beyond the scope of ActiveMedusa; but keep in mind that
 any Solr fields referred to in your `ActiveMedusa::Configuration` object, as
 well as any referred to in your entities (see below), need to exist in Solr and
-be populated some way or other. In the example above, `searchall_txt` is
+get populated some way or other. In the example above, `searchall_txt` is
 presumably a dynamic `copyField` that Solr will populate itself, and likewise
 the `*_facet` fields; but all of the rest need to exist, either as regular or
 dynamic fields.
 
 ## Defining Entities
 
-Let's declare some entity/model classes. `Collection` and `Item` will
-correspond to Fedora container nodes, and `Bytestream` will correspond to
-Fedora binary nodes. These are all common entities found in many repositories,
-but you could change the nomenclature, or add other entities. Note that
-`Collection` and `Item` inherit from `ActiveMedusa::Container` while
-`Bytestream` inherits from `ActiveMedusa::Binary`. These are the two base
-classes from which all of your entities must inherit.
+Here we will declare some entity/model classes that will be used throughout
+this readme. `Collection` and `Item` will correspond to Fedora container nodes,
+and `Bytestream` will correspond to Fedora binary nodes. These are all common
+entities found in many repositories, but you could change the nomenclature, or
+add other entities. Note that `Collection` and `Item` inherit from `ActiveMedusa::Container` while `Bytestream` inherits from
+`ActiveMedusa::Binary`. These are the two base classes from which all of
+your entities must inherit.
 
 ```ruby
 # collection.rb
@@ -405,8 +402,7 @@ Optionally, but ideally, you should also specify the binary's media type:
 b.media_type = 'image/tiff'
 ```
 
-At this point, you must save it before you can set any additional properties.
-This is a limitation of ActiveMedusa. It can be saved just like a container:
+At this point, it can be saved just like a container:
 
 ```ruby
 b.save!
@@ -437,11 +433,13 @@ item.bytestreams.each { |b| .. }
 *Note 1: Newly added entities will not appear in search results until the Solr
 index has been committed. ActiveMedusa will not commit it automatically.*
 
-*Note 2: Newly created entities will not appear in search results in the
-same thread unless enough time has elapsed for Solr to have received them,
-which will rarely be the case. An ugly way of getting around this is to `sleep`
-for a bit after saving an entity to wait for Solr to catch up - hoping that it
-does in time. But it's best to simply not try to do it.*
+*Note 2: If you are using fcrepo-message-consumer or fcrepo-camel, newly
+created entities will not appear in search results in the same thread unless
+enough time has elapsed between creation and query for Solr to have received
+them, which will rarely be the case. An ugly way of getting around this is to
+`sleep` for a bit after saving an entity to wait for Solr to catch up - hoping
+that it does in time. This is a crude workaround for a fundamental "gotcha" of
+this kind of asynchronous messaging architecture.*
 
 ```ruby
 items = Item.all.where(some_property: 'cats').
@@ -457,8 +455,8 @@ as by `each`.
 
 ### Ordering
 
-By default, results are sorted by relevance. To override this, use `order`
-to sort by any sortable Solr field:
+By default, results are sorted by relevance (score). To override this, use
+`order` to sort by any sortable Solr field:
 
 ```ruby
 Item.all.order('some_solr_field' => :asc)
@@ -521,8 +519,8 @@ retrieved entity.
 ### "More Like This"
 
 If you have the [MoreLikeThisHandler]
-(https://wiki.apache.org/solr/MoreLikeThisHandler) enabled in Solr, you can
-query by similarity:
+(https://wiki.apache.org/solr/MoreLikeThisHandler) enabled in your
+`solrconfig.xml`, you can query by similarity:
 
 ```ruby
 item = Item.find(id).more_like_this.limit(5)
@@ -550,11 +548,8 @@ have been committed.)
 validation functionality that ActiveRecord enjoys. So, you can use
 ActiveRecord validation methods on your ActiveMedusa entities.
 
-The only catch is that a property must be a `property` in order to be
-validatable.
-
-Also be aware that validation failures will raise an
-`ActiveMedusa::RecordInvalid` instead of an `ActiveRecord::RecordInvalid`.
+Note that validation failures will raise an `ActiveMedusa::RecordInvalid`
+instead of an `ActiveRecord::RecordInvalid`.
 
 ## Forms
 
@@ -582,7 +577,7 @@ Example:
 ```ruby
 class Item < ActiveMedusa::Container
   before_save :do_something
-  
+
   def do_something
   end
 end
@@ -607,9 +602,10 @@ inspect the query and see the raw Solr results. Use it like this:
 ```ruby
 items = Item.all.to_a # to_a executes the Solr request
 puts items.solr_response.inspect
+puts items.solr_response.request.inspect
 ```
 
-Note that it will return `nil` until a request has been executed.
+Note that `solr_response` will return `nil` until a request has been executed.
 
 # Contributing
 
