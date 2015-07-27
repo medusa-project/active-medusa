@@ -18,7 +18,7 @@ ActiveMedusa::Configuration.new do |config|
   config.solr_uri_field = :id
   config.solr_uuid_field = :uuid_s
   config.solr_default_search_field = :searchall_txt
-  config.solr_facet_fields = [
+  config.solr_default_facetable_fields = [
       :collection_facet, :contributor_facet, :coverage_facet, :creator_facet,
       :date_facet, :format_facet, :language_facet, :publisher_facet,
       :source_facet, :subject_facet, :type_facet

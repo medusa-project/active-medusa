@@ -22,6 +22,7 @@ module ActiveMedusa
       @caller = caller
       @calling_class = caller.kind_of?(Class) ? caller : caller.class
       @facet = true
+      @facetable_fields = Configuration.instance.solr_default_facetable_fields
       @facet_queries = []
       @filter_clauses = [] # will be joined by AND
       @limit = nil

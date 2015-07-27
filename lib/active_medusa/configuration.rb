@@ -58,7 +58,12 @@ module ActiveMedusa
 
     attr_accessor :solr_default_search_field
 
-    attr_accessor :solr_facet_fields
+    ##
+    # @!attribute solr_facet_fields
+    #   @return [Array] Array of facetable fields. Can be overridden by
+    #   `ActiveMedusa::Relation.facetable_fields`.
+    #
+    attr_accessor :solr_default_facetable_fields
 
     ##
     # @!attribute solr_url

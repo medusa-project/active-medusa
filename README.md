@@ -70,7 +70,7 @@ this. Documentation of each option is available
 ActiveMedusa::Configuration.new do |config|
   config.fedora_url = 'http://localhost:8080/fcrepo/rest'
   config.logger = Rails.logger
-  config.class_predicate = 'http://example.org/hasClass'
+  config.class_predicate = 'http://www.w3.org/2000/01/rdf-schema#Class'
   config.solr_url = 'http://localhost:8983/solr'
   config.solr_core = 'collection1'
   config.solr_more_like_this_endpoint = '/mlt'
@@ -78,8 +78,9 @@ ActiveMedusa::Configuration.new do |config|
   config.solr_class_field = :class_s # used by ActiveMedusa finder methods
   config.solr_uuid_field = :uuid_s
   config.solr_default_search_field = :searchall_txt
-  config.solr_facet_fields = [:collection_facet, :creator_facet,
-                              :date_facet, :format_facet, :language_facet]
+  config.solr_default_facetable_fields = [
+      :collection_facet, :creator_facet, :date_facet, :format_facet,
+      :language_facet]
 end
 ```
 
@@ -383,7 +384,7 @@ a `Bytestream` can be initialized like an `Item`:
 b = Bytestream.new(parent_url: 'http://url/of/parent/container')
 ```
 
-But before it can be saved, you will want to associate some data with it. You
+Before saving it, you will probably want to associate some data with it. You
 can specify a file to upload:
 
 ```ruby
@@ -488,10 +489,32 @@ Item.all.facet('creator:Napoleon%20Bonaparte')
 Item.all.facet(['type:Book', 'subject:Citrus'])
 ```
 
+The default list of facetable fields is set in
+`ActiveMedusa::Configuration.solr_default_facetable_fields`.
+`ActiveMedusa::Relation`'s initializer will pre-populate its `facetable_fields`
+property with the contents of this array. But this property can be re-set at
+runtime. So, if your Configuration object were to contain:
+
+```ruby
+ActiveMedusa::Configuration.new do |config|
+  config.solr_default_facetable_fields = [
+      :collection_facet, :creator_facet, :date_facet, :format_facet,
+      :language_facet]
+end
+```
+
+Then, say you wanted to return more than just these facets, just once:
+
+```ruby
+config = ActiveMedusa::Configuration.instance
+fields = config.solr_default_facetable_fields + [:type_facet, :publisher_facet]
+items = Item.where(...).facetable_fields(fields)
+```
+
 To access returned facets, you might do something like:
 
 ```ruby
-items = Item.where('..')
+items = Item.where(...)
 # facet_fields returns an array of ActiveMedusa::Facet objects.
 items.facet_fields.each do |facet|
   # A Facet may have one or more ActiveMedusa::Facet::Term objects.
