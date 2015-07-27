@@ -60,6 +60,19 @@ module ActiveMedusa
     end
 
     ##
+    # @param fields [Array]
+    # @return [self, Array]
+    #
+    def facetable_fields(fields = nil)
+      if fields
+        @facetable_fields = fields
+        return self
+      else
+        return @facetable_fields
+      end
+    end
+
+    ##
     # @param fq [Hash, String]
     # @return [ActiveMedusa::Entity] self
     #
@@ -218,7 +231,7 @@ module ActiveMedusa
           if @facet
             params['facet'] = true
             params['facet.mincount'] = 1
-            params['facet.field'] = Configuration.instance.solr_facet_fields
+            params['facet.field'] = self.facetable_fields
             params['fq'] = @facet_queries
           end
         end
