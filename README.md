@@ -1,7 +1,7 @@
 # ActiveMedusa
 
-ActiveMedusa provides a simple ActiveRecord-like interface to a Fedora 4
-repository, using Solr for lookup and querying.
+ActiveMedusa provides an ActiveRecord-style interface to a Fedora 4 repository,
+using Solr for lookup and querying.
 
 * **[GitHub home](https://github.com/medusa-project/active-medusa)**
 * **[API documentation](http://medusa-project.github.io/active-medusa/frames.html)**
@@ -13,9 +13,12 @@ repository, using Solr for lookup and querying.
   or use existing ones.
 * Customizable Solr schema. Although some extra fields are required, their
   names are up to you.
+* Can work with different Solr indexing strategies, including self-indexing and
+  fcrepo-message-consumer/fcrepo-camel.
 * Supports binary and container nodes, both of which are first-class, queryable
   entities.
-* Direct read/write access to entities' RDF graphs.
+* Supports Fedora transactions.
+* Direct read/write access to entities' source RDF graphs.
 * Supports "belongs-to" and "has-many" relationships between entities.
 * No-configuration support for node hierarchy traversal via automatic `parent`
   and `children` methods on entities.
@@ -25,9 +28,16 @@ repository, using Solr for lookup and querying.
 * No cascading
 * No uniquing
 * Can only set references on the owned side
+* Missing support for some Fedora features like moving nodes, versioning, etc.
 * Probably a lot more
 
+# Versioning
+
+ActiveMedusa uses [semantic versioning](http://semver.org).
+
 # Installation
+
+*Note: If you are already using ActiveMedusa, skip to Upgrading below.*
 
 Currently ActiveMedusa is not available via rubygems. There are a couple of
 other options:
@@ -58,6 +68,13 @@ Then execute:
 
     $ bundle
 
+# Upgrading
+
+## 1.0 to 1.1
+
+Add `config.solr_parent_uri_field` to your `ActiveMedusa::Configuration`
+initializer.
+
 # Usage
 
 ## Initializing
@@ -75,7 +92,10 @@ ActiveMedusa::Configuration.new do |config|
   config.solr_core = 'collection1'
   config.solr_more_like_this_endpoint = '/mlt'
   config.solr_uri_field = :id
-  config.solr_class_field = :class_s # used by ActiveMedusa finder methods
+  config.solr_class_field = :class_s
+  config.solr_created_field = :created_dts
+  config.solr_last_modified_field = :last_modified_dts
+  config.solr_parent_uri_field = :parent_uri_s
   config.solr_uuid_field = :uuid_s
   config.solr_default_search_field = :searchall_txt
   config.solr_default_facetable_fields = [
@@ -87,32 +107,16 @@ end
 (If you are using Rails, you would put this in
 `config/initializers/active_medusa.rb`, and then restart your application.)
 
-### Configuring a Solr update strategy
-
-ActiveMedusa does not write to Solr; you must devise a way to maintain your
-Solr index without ActiveMedusa's help. One option would be to use a strategy
-like [fcrepo-message-consumer](https://github.com/fcrepo4/fcrepo-message-consumer)
-(deprecated) or [fcrepo-camel](https://github.com/fcrepo4/fcrepo-camel) which
-keep Solr updated by listening for changes in your repository. Another option
-would be to populate Solr from your application, such as by using `after_save` callbacks on your ActiveMedusa models.
-
-Getting this working is beyond the scope of ActiveMedusa; but keep in mind that
-any Solr fields referred to in your `ActiveMedusa::Configuration` object, as
-well as any referred to in your entities (see below), need to exist in Solr and
-get populated some way or other. In the example above, `searchall_txt` is
-presumably a dynamic `copyField` that Solr will populate itself, and likewise
-the `*_facet` fields; but all of the rest need to exist, either as regular or
-dynamic fields.
-
 ## Defining Entities
 
 Here we will declare some entity/model classes that will be used throughout
 this readme. `Collection` and `Item` will correspond to Fedora container nodes,
 and `Bytestream` will correspond to Fedora binary nodes. These are all common
 entities found in many repositories, but you could change the nomenclature, or
-add other entities. Note that `Collection` and `Item` inherit from `ActiveMedusa::Container` while `Bytestream` inherits from
-`ActiveMedusa::Binary`. These are the two base classes from which all of
-your entities must inherit.
+add other entities. Note that `Collection` and `Item` inherit from
+`ActiveMedusa::Container` while `Bytestream` inherits from
+`ActiveMedusa::Binary`. These are the two base classes from which all of your
+entities must inherit.
 
 ```ruby
 # collection.rb
@@ -200,6 +204,50 @@ module Entities
 end
 ```
 
+## Configuring a Solr update strategy
+
+By default, ActiveMedusa does not write to Solr, yet it is going to expect that
+something will. You have a couple of options for dealing with this. One would
+be to use a strategy like
+[fcrepo-message-consumer](https://github.com/fcrepo4/fcrepo-message-consumer)
+(deprecated) or [fcrepo-camel](https://github.com/fcrepo4/fcrepo-camel) which
+keep Solr updated by listening for changes in your repository. Another would
+be to populate Solr from your application.
+
+See one of the next sections for info on getting this working.
+
+### Updating Solr from your application
+
+ActiveMedusa provides an optional helper module, `Indexable`, that will assist
+you in keeping Solr updated yourself. To use it, include it in any entity
+class:
+
+```ruby
+# item.rb
+class Item < ActiveMedusa::Container
+  include ActiveMedusa::Indexable
+  ...
+end
+```
+
+`Item` instances will now be created, updated, and deleted in Solr
+automatically.
+
+See the [documentation for Indexable]
+(http://medusa-project.github.io/active-medusa/ActiveMedusa/Indexable.html)
+if you wish to change the way your entities get indexed.
+
+### Updating Solr with fcrepo-camel
+
+For this, you will need to get fcrepo-camel working, which is beyond the scope
+of this readme. You might use an indexing transformation, or you might write
+custom code to respond to Fedora change messages. Either way, you will need to
+account for all of the same fields as `Indexable.solr_document` does; take a
+look at its implementation for details.
+
+*Note: if you are using this strategy, do **not**
+`include ActiveMedusa::Indexable` in your models, as above.*
+
 ## Creating Entities
 
 `Item.new` will create an `Item` object, but it will not be saved to the
@@ -278,6 +326,9 @@ item.update(some_property: 55)
 
 Call `delete` on an entity. This method accepts an optional boolean parameter
 that will delete its tombstone as well.
+
+*Note: Entities will not be deleted from Solr until the Solr index has been
+committed. ActiveMedusa will not commit it automatically.*
 
 ## Loading Entities
 

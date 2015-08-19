@@ -14,6 +14,7 @@ ActiveMedusa::Configuration.new do |config|
   config.solr_core = 'activemedusa'
   config.solr_more_like_this_endpoint = '/mlt'
   config.solr_class_field = :class_s
+  config.solr_parent_uri_field = :parent_uri_s
   config.solr_uri_field = :id
   config.solr_uuid_field = :uuid_s
   config.solr_default_search_field = :searchall_txt

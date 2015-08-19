@@ -9,9 +9,9 @@ Gem::Specification.new do |spec|
   spec.name          = 'active-medusa'
   spec.version       = ActiveMedusa::VERSION
   spec.homepage      = 'http://github.com/medusa-project/active-medusa'
-  spec.date          = '2015-05-08'
+  spec.date          = '2015-08-18'
   spec.summary       = 'ActiveMedusa'
-  spec.summary       = %q{Object-repositorial mapper for Fedora 4.1.}
+  spec.summary       = %q{Object-repositorial mapper for Fedora 4.x.}
   #spec.files         = Dir['lib/*.rb'] + Dir['test/**/*']
   spec.files         = `git ls-files -z`.split("\x0").reject { |f| f.match(%r{^(test|spec|features)/}) }
   spec.require_paths = ['lib']
@@ -34,9 +34,9 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency 'rdf'
   spec.add_runtime_dependency 'rdf-turtle'
   spec.add_runtime_dependency 'rsolr'
-  spec.add_development_dependency "bundler", "~> 1.9"
+  spec.add_development_dependency 'bundler', '~> 1.9'
   spec.add_development_dependency 'rdoc'
   spec.add_development_dependency 'yard'
-  spec.add_development_dependency "rake", "~> 10.0"
+  spec.add_development_dependency 'rake', '~> 10.0'
   spec.add_development_dependency 'minitest'
 end

@@ -54,6 +54,12 @@ module ActiveMedusa
     #
     attr_accessor :solr_more_like_this_endpoint
 
+    # @!attribute solr_parent_uri_field
+    #   @return [String] Name of the Solr field that stores the node's parent
+    #     URI.
+    #
+    attr_accessor :solr_parent_uri_field
+
     # @!attribute solr_uuid_field
     #   @return [String] Name of the Solr field that stores the repository UUID.
     #

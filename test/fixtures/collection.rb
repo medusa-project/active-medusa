@@ -1,5 +1,7 @@
 class Collection < ActiveMedusa::Container
 
+  include ActiveMedusa::Indexable
+
   entity_class_uri 'http://example.org/Collection'
 
   has_many :items

@@ -1,5 +1,7 @@
 class Item < ActiveMedusa::Container
 
+  include ActiveMedusa::Indexable
+
   entity_class_uri 'http://example.org/Item'
 
   belongs_to :collection, rdf_predicate: 'http://example.org/isMemberOf',
@@ -46,7 +48,7 @@ class Item < ActiveMedusa::Container
   end
 
   def do_after_destroy
-    @after_destroy_called = true
+    # can't set an ivar here because the instance will be frozen
   end
 
   def do_before_load
