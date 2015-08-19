@@ -30,13 +30,13 @@ class Seeder
     item_1.save!
 
     bytestream_1 = Bytestream.new(parent_url: item_1.repository_url,
-                                  upload_pathname: File.expand_path('~/Pictures/Cars/f50.jpg'),
+                                  upload_pathname: File.join(__dir__, 'stupid_signs.jpg'),
                                   requested_slug: 'bytestream1',
                                   item: item_1)
     bytestream_1.save!
 
     bytestream_2 = Bytestream.new(parent_url: item_1.repository_url,
-                                  upload_pathname: File.expand_path('~/Pictures/Cars/f50.jpg'),
+                                  upload_pathname: File.join(__dir__, 'stupid_signs.jpg'),
                                   requested_slug: 'bytestream2',
                                   item: item_1)
     bytestream_2.save!
@@ -69,10 +69,6 @@ class Seeder
                                   external_resource_url: 'https://www.google.com/',
                                   requested_slug: 'bytestream4', item: item_3)
     bytestream_4.save!
-
-    item_1.save!
-    item_2.save!
-    item_3.save!
   end
 
   def teardown
