@@ -134,9 +134,9 @@ class Item < ActiveMedusa::Container
   entity_class_uri 'http://pcdm.org/models#Object'
   has_many :items
   has_many :bytestreams
-  belongs_to :collection, predicate: 'http://example.org/isMemberOf',
+  belongs_to :collection, rdf_predicate: 'http://example.org/isMemberOf',
              solr_field: :collection_s
-  belongs_to :item, predicate: 'http://example.org/isChildOf',
+  belongs_to :item, rdf_predicate: 'http://example.org/isChildOf',
              solr_field: 'parent_s', name: 'parent'
   property :full_text,
            type: :string,
@@ -147,7 +147,7 @@ end
 # bytestream.rb
 class Bytestream < ActiveMedusa::Binary
   entity_class_uri 'http://pcdm.org/models#File'
-  belongs_to :item, predicate: 'http://example.org/isOwnedBy'
+  belongs_to :item, rdf_predicate: 'http://example.org/isOwnedBy'
 end
 ```
 
