@@ -27,12 +27,12 @@ module ActiveMedusa
     attr_accessor :solr_field
 
     # @!attribute source_class
-    #   @return [String] The class of the source (declaring) side of the
+    #   @return [Class] The class of the source (declaring) side of the
     #   association.
     attr_accessor :source_class
 
     # @!attribute target_class
-    #   @return [String] The class of the target side of the association.
+    #   @return [Class] The class of the target side of the association.
     attr_accessor :target_class
 
     # @!attribute type
