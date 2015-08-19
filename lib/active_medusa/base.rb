@@ -213,8 +213,7 @@ module ActiveMedusa
 
     ##
     # Destroys the instance's corresponding repository node, marks the instance
-    # as destroyed, and freezes it. Also cascades these operations to all
-    # dependent `has_many` instances.
+    # as destroyed, and freezes it.
     #
     # @param options [Hash] Options hash
     # @option options [Boolean] :also_tombstone Also deletes the repository
