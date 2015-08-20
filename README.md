@@ -31,9 +31,11 @@ using Solr for lookup and querying.
 * Missing support for some Fedora features like moving nodes, versioning, etc.
 * Probably a lot more
 
-# Versioning
+# Requirements
 
-ActiveMedusa uses [semantic versioning](http://semver.org).
+* Ruby 2.x
+* Fedora 4.1.1 or 4.2 (earlier 4.x versions may work but are untested; 4.3 does
+  **not** work yet due to the elimination of `fedora:uuid`)
 
 # Installation
 
@@ -72,8 +74,10 @@ Then execute:
 
 ## 1.0 to 1.1
 
-Add `config.solr_parent_uri_field` to your `ActiveMedusa::Configuration`
-initializer.
+1. Add `config.solr_parent_uri_field` to your `ActiveMedusa::Configuration`
+   initializer.
+2. Decide whether you want to use the new `ActiveMedusa::Indexable` module
+   (see below).
 
 # Usage
 
@@ -239,14 +243,35 @@ if you wish to change the way your entities get indexed.
 
 ### Updating Solr with fcrepo-camel
 
-For this, you will need to get fcrepo-camel working, which is beyond the scope
-of this readme. You might use an indexing transformation, or you might write
-custom code to respond to Fedora change messages. Either way, you will need to
-account for all of the same fields as `Indexable.solr_document` does; take a
-look at its implementation for details.
+For this, you will need to get fcrepo-camel working, which is covered
+[here](https://wiki.duraspace.org/display/FEDORA4x/Setup+Camel+Message+Integrations)
+and is beyond the scope of this readme. You might use an [indexing
+transformation](https://wiki.duraspace.org/display/FEDORA4x/Indexing+Transformations)
+with it, or you might write custom code to respond to Fedora change messages.
+Either way, you will need to account for all of the same fields as
+`ActiveMedusa::Indexable.solr_document` does; take a look at its implementation
+for details.
 
-*Note: if you are using this strategy, do **not**
-`include ActiveMedusa::Indexable` in your models, as above.*
+*Note: with this strategy, do **not** `include ActiveMedusa::Indexable` in your
+models, as above.*
+
+The [Fedora wiki](https://wiki.duraspace.org/display/FEDORA4x/External+Search)
+shows indexable nodes receiving `indexing:hasIndexingTransformation` and
+`rdf:type` triples. If you want to use these the way it prescribes, you will
+have to add them to your entities manually -- like this, for example:
+
+```ruby
+class Item < ActiveMedusa::Container
+  before_create :add_indexing_triples
+
+  def add_indexing_triples
+    self.rdf_graph << [nil, RDF::URI('http://fedora.info/definitions/v4/indexing#hasIndexingTransformation'),
+        'default']
+    self.rdf_graph << [nil, RDF::URI('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+        RDF::URI('http://fedora.info/definitions/v4/indexing#Indexable')]
+  end
+end
+```
 
 ## Creating Entities
 
@@ -335,30 +360,30 @@ committed. ActiveMedusa will not commit it automatically.*
 *Note: Newly created entities cannot be loaded until the Solr index has been
 committed. ActiveMedusa will not commit it automatically.*
 
-To load an item by some property, you can use one of the finder methods, like
-`find`, which will find by repository UUID:
+### By UUID
 
 ```ruby
 item = Item.find('some UUID')
 ```
 
-If `find` finds multiple entities, it will return only one. This is the only
-finder method that will raise an error if nothing is found.
+This is the only finder method that will raise an error if nothing is found.
 
-Alternatively, you can find by repository URI:
+### By Repository URI
 
 ```ruby
 item = Item.find_by_uri('http://localhost:8080/fcrepo/rest/kumquats')
 ```
 
-Then, there are the `find_by_x` methods, where `x` corresponds to some
-`property`:
+### By Property
+
+When you use `property` statements in entity classes, a `find_by_x` method is
+auto-generated for each:
 
 ```ruby
 item = Item.find_by_title('2003 Global Outlook for 6-Quart Slow-Cookers')
 ```
 
-Once an entity has been loaded, it can be reloaded:
+### Reloading
 
 ```ruby
 item.reload!
@@ -366,14 +391,14 @@ item.reload!
 
 ### Loading Entities of Unknown Type
 
-Suppose you have an entity URI or UUID, but you are unsure of the class of
-the entity it identifies -- you don't know whether it's an `Item` or a
-`Collection`, and therefore don't know which class `find` method to use. In
-that case, you can call `find` on `ActiveMedusa::Container` to return an
-instance of the correct class:
+Suppose you have an entity URI, but are unsure of the class of the entity it
+identifies -- you don't know whether it's an `Item` or a `Collection`, and
+therefore don't know which class `find` method to use. In that case, you can
+call `load` on `ActiveMedusa::Base` to return an instance of the correct
+class:
 
 ```ruby
-item_or_collection = ActiveMedusa::Container.find('...')
+item_or_collection = ActiveMedusa::Base.load(uri)
 ```
 
 ### Reading & Writing Metadata
@@ -466,19 +491,6 @@ binary nodes have supplementary metadata available at the `/fcr:metadata`
 path under their URL. This is the only thing that will be updated when you
 call `save` on an already-saved binary resource, A binary entity's RDF graph
 is available via its `rdf_graph` accessor, just like a container.
-
-### Accessing Binary Nodes
-
-Binary nodes are not indexed in Solr. If you want to be able to retrieve them
-later via ActiveMedusa, you need to make sure they are accessible via a
-relationship with some other entity. In the example above, `Item` has a
-one-to-many relationship with `Bytestream`, which makes its bytestreams
-accessible via the `bytestreams` accessor:
-
-```ruby
-item = Item.find('..')
-item.bytestreams.each { |b| .. }
-```
 
 ## Searching For Entities
 
@@ -597,24 +609,35 @@ If you have the [MoreLikeThisHandler]
 `solrconfig.xml`, you can query by similarity:
 
 ```ruby
-item = Item.find(id).more_like_this.limit(5)
+items = Item.find(id).more_like_this.limit(5)
 ```
 
 ## Transactions
 
-Simply wrap any CRUD operation(s) inside a block:
+The example below illustrates a transaction. Anything inside the block will
+have access to the base URL of the transaction as `tx_url`. To create, update,
+or delete an entity within the transaction, use `create`, `update`, `delete`,
+`save`, etc. as usual, but set the entity's `transaction_url` attribute first:
 
 ```ruby
 ActiveMedusa::Base.transaction do |tx_url|
   # Any code present here will occur within a transaction.
   # Raising an error will roll back the transaction.
   # Otherwise, it will commit automatically when the block ends.
+  item = Item.find(..)
+  item.transaction_url = tx_url
+  item.update!(some_property: 'kumquats')
 end
 ```
 
-Note: it is not possible to query within a transaction. (Fedora does not
-dispatch messages about operations that happen inside transactions until they
-have been committed.)
+*Note: if you are using fcrepo-camel, keep in mind that Fedora does not dispatch
+messages about operations that happen inside transactions until they have been
+committed, meaning you won't be able to query for entities created within the
+same transaction.*
+
+*Note: if you are using `ActiveMedusa::Indexable`, keep in mind that rolling
+back a transaction will **not** roll back any changes to Solr made from within
+the transaction.*
 
 ## Validation
 
@@ -628,8 +651,7 @@ instead of an `ActiveRecord::RecordInvalid`.
 ## Forms
 
 Because `ActiveMedusa::Base` includes `ActiveModel::Model`, your ActiveMedusa
-entities should work perfectly well with Rails' FormHelper. (Other form
-frameworks are untested.)
+entities should work perfectly well with Rails' FormHelper.
 
 ## Callbacks
 
@@ -656,6 +678,23 @@ class Item < ActiveMedusa::Container
   end
 end
 ```
+
+# Versioning
+
+ActiveMedusa uses [semantic versioning](http://semver.org).
+
+# Version History
+
+## 1.1
+
+* Added optional automatic Solr indexing via `ActiveMedusa::Indexable`
+* Added `ActiveMedusa::Configuration.solr_parent_uri_field`
+* Documentation improvements
+* Log to stdout by default
+
+## 1.0
+
+* First release.
 
 # Development
 
