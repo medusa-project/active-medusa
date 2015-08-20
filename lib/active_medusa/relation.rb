@@ -89,6 +89,9 @@ module ActiveMedusa
       self
     end
 
+    ##
+    # @return [ActiveMedusa::Base, nil]
+    #
     def first
       @limit = 1
       self.to_a.first

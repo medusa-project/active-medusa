@@ -44,6 +44,7 @@ module ActiveMedusa
       ##
       # @param uri [String] Fedora resource URI
       # @return [ActiveMedusa::Relation]
+      # @raise [SocketError] If the host is unknown
       #
       def find_by_uri(uri)
         ActiveMedusa::Base.load(uri)

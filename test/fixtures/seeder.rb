@@ -80,6 +80,10 @@ class Seeder
       @http.delete(f4_url + url) rescue nil
       @http.delete(f4_url + url + '/fcr:tombstone') rescue nil
     end
+    
+    url = @config.solr_url.chomp('/') + '/' + @config.solr_core
+    @http.get(url + '/update?stream.body=<delete><query>*:*</query></delete>')
+    @http.get(url + '/update?stream.body=<commit/>')
   end
 
   private

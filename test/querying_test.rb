@@ -9,8 +9,7 @@ class QueryingTest < Minitest::Test
     @seeder.teardown
     @seeder.seed
     sleep 2 # wait for changes to propagate to solr
-    @http.get("#{@config.solr_url}/#{@config.solr_core}/update?commit=true")
-    sleep 2 # wait for solr to commit
+    ActiveMedusa::Solr.client.commit
   end
 
   def teardown
@@ -45,7 +44,9 @@ class QueryingTest < Minitest::Test
   def test_find_by_uri
     uri = @config.fedora_url + '/item1'
     assert_instance_of Item, Item.find_by_uri(uri)
-    assert_nil Item.find_by_uri('http://nonexistent')
+    assert_raises SocketError do
+      assert_nil Item.find_by_uri('http://nonexistent')
+    end
   end
 
   def test_find_by_uuid

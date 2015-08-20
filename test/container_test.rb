@@ -20,12 +20,6 @@ class ContainerTest < Minitest::Test
 
   # initialize
 
-  def test_initialize
-    item = Item.new
-    assert_kind_of Set, item.binaries_to_add
-    assert_kind_of RDF::Graph, item.rdf_graph
-  end
-
   def test_rdf_graph_initialization
     item = Item.new
     found_count = 0

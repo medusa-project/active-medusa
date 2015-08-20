@@ -18,6 +18,25 @@ class RelationTest < Minitest::Test
     end
   end
 
+  # count
+
+  def test_count
+    items = Item.all
+    assert_equal items.to_a.length, items.count
+  end
+
+  # solr_response
+
+  ##
+  # Tests that solr_response is populated after a request.
+  #
+  def test_solr_response
+    items = Item.all
+    assert_nil items.solr_response
+    items.to_a
+    assert_kind_of Hash, items.solr_response
+  end
+
   # where
 
   def test_where_after_loaded
