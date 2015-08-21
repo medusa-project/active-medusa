@@ -50,8 +50,8 @@ module ActiveMedusa
 
       # add fields required by activemedusa
       doc = {
-          config.solr_uri_field => self.repository_url,
           config.solr_uuid_field => self.uuid,
+          config.solr_id_field => self.id,
           config.solr_class_field => self.class.entity_class_uri,
           config.solr_parent_uri_field =>
               self.rdf_graph.any_object('http://fedora.info/definitions/v4/repository#hasParent').to_s,

@@ -32,7 +32,7 @@ class IndexableTest < Minitest::Test
     sleep 2
     # check that it no longer exists in solr
     response = @solr.get(
-        'select', params: { q: "#{@config.solr_uri_field}:\"#{item.repository_url}\"" })
+        'select', params: { q: "#{@config.solr_id_field}:\"#{item.id}\"" })
     assert_equal 0, response['response']['docs'].length
   end
 
@@ -47,8 +47,8 @@ class IndexableTest < Minitest::Test
     item = Item.all.first
     doc = item.solr_document
     # test presence of fields required by activemedusa
-    assert_equal item.repository_url, doc[@config.solr_uri_field]
     assert_equal item.uuid, doc[@config.solr_uuid_field]
+    assert_equal item.id, doc[@config.solr_id_field]
     assert_equal item.class.entity_class_uri, doc[@config.solr_class_field]
     assert_equal item.rdf_graph.any_object('http://fedora.info/definitions/v4/repository#hasParent').to_s,
                  doc[@config.solr_parent_uri_field]

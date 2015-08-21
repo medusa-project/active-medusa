@@ -42,11 +42,11 @@ module ActiveMedusa
     attr_accessor :solr_class_field
 
     ##
-    # @!attribute solr_uri_field
+    # @!attribute solr_id_field
     #   @return [String] Name of the Solr field that stores the repository
-    #     URL/URI.
+    #     node ID.
     #
-    attr_accessor :solr_uri_field
+    attr_accessor :solr_id_field
 
     # @!attribute solr_more_like_this_endpoint
     #   @return [String] Path of the "MoreLikeThis" endpoint. Defaults to

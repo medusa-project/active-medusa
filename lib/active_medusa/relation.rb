@@ -126,7 +126,7 @@ module ActiveMedusa
       reset_results
       @more_like_this = true
       @facet = false
-      self.where(Configuration.instance.solr_uri_field => @caller.repository_url)
+      self.where(Configuration.instance.solr_id_field => @caller.id)
     end
 
     ##
@@ -215,7 +215,7 @@ module ActiveMedusa
         params = {
             'q' => @where_clauses.join(' AND '),
             'df' => Configuration.instance.solr_default_search_field,
-            'fl' => "#{Configuration.instance.solr_uri_field},score",
+            'fl' => "#{Configuration.instance.solr_id_field},score",
             'fq' => @filter_clauses.join(' AND '),
             'start' => @start,
             'sort' => @order,

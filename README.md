@@ -95,10 +95,10 @@ ActiveMedusa::Configuration.new do |config|
   config.solr_url = 'http://localhost:8983/solr'
   config.solr_core = 'collection1'
   config.solr_more_like_this_endpoint = '/mlt'
-  config.solr_uri_field = :id
   config.solr_class_field = :class_s
   config.solr_created_field = :created_dts
   config.solr_last_modified_field = :last_modified_dts
+  config.solr_id_field = :id
   config.solr_parent_uri_field = :parent_uri_s
   config.solr_uuid_field = :uuid_s
   config.solr_default_search_field = :searchall_txt
