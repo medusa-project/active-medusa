@@ -19,7 +19,7 @@ class IndexableTest < Minitest::Test
     url = @config.solr_url.chomp('/') + '/' + @config.solr_core
     @http = HTTPClient.new
     @http.get(url + '/update?stream.body=<delete><query>*:*</query></delete>')
-    @http.get(url + '/update?stream.body=<commit/>')
+    @solr.commit
   end
 
   def test_delete_from_solr

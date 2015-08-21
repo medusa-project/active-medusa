@@ -27,15 +27,9 @@ class ContainerTest < Minitest::Test
       if st.predicate.to_s == @config.class_predicate and
           st.object.to_s == 'http://example.org/Item'
         found_count += 1
-      elsif st.predicate.to_s == 'http://fedora.info/definitions/v4/indexing#hasIndexingTransformation' and
-          st.object.to_s == @config.fedora_indexing_transformation
-        found_count += 1
-      elsif st.predicate.to_s == 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type' and
-          st.object.to_s == 'http://fedora.info/definitions/v4/indexing#Indexable'
-        found_count += 1
       end
     end
-    flunk unless found_count == 3
+    assert_equal 1, found_count
   end
 
   # more_like_this

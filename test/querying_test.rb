@@ -23,52 +23,35 @@ class QueryingTest < Minitest::Test
   end
 
   def test_find
-    # get a valid UUID
-    uuid = nil
-    response = @http.get(@config.fedora_url + '/item1', nil,
-                         { 'Accept' => 'application/n-triples' })
-    graph = RDF::Graph.new
-    graph.from_ntriples(response.body)
-    graph.each_statement do |st|
-      if st.predicate.to_s == 'http://fedora.info/definitions/v4/repository#uuid'
-        uuid = st.object.to_s
-        break
-      end
-    end
-    assert_instance_of Item, Item.find(uuid)
-    assert_raises RuntimeError do
-      assert_nil Item.find('nonexistent uuid')
-    end
-  end
-
-  def test_find_by_uri
     uri = @config.fedora_url + '/item1'
-    assert_instance_of Item, Item.find_by_uri(uri)
+    assert_instance_of Item, Item.find(uri)
+    assert_raises HTTPClient::BadResponseError do
+      assert_nil Item.find_by_uri(uri + 'adfasfd')
+    end
     assert_raises SocketError do
       assert_nil Item.find_by_uri('http://nonexistent')
     end
   end
 
-  def test_find_by_uuid
-    # get a valid UUID
-    uuid = nil
-    response = @http.get(@config.fedora_url + '/item1', nil,
-                         { 'Accept' => 'application/n-triples' })
-    graph = RDF::Graph.new
-    graph.from_ntriples(response.body)
-    graph.each_statement do |st|
-      if st.predicate.to_s == 'http://fedora.info/definitions/v4/repository#uuid'
-        uuid = st.object.to_s
-        break
-      end
+  def test_find_by_id
+    uri = @config.fedora_url + '/item1'
+    assert_instance_of Item, Item.find_by_id(uri)
+    assert_raises HTTPClient::BadResponseError do
+      assert_nil Item.find_by_uri(uri + 'adfasfd')
     end
-    assert_instance_of Item, Item.find_by_uuid(uuid)
-    assert_nil Item.find_by_uuid('nonexistent uuid')
   end
 
   def test_find_by_property
     assert_instance_of Item, Item.find_by_full_text('lorem ipsum')
     assert_nil Item.find_by_full_text('nonexistent full text')
+  end
+
+  def test_find_by_uri
+    uri = @config.fedora_url + '/item1'
+    assert_instance_of Item, Item.find_by_uri(uri)
+    assert_raises HTTPClient::BadResponseError do
+      assert_nil Item.find_by_uri(uri + 'adfasfd')
+    end
   end
 
   def test_method_forwarding

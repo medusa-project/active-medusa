@@ -25,6 +25,7 @@ module ActiveMedusa
       # @param id [String] Repository node URI
       # @return [ActiveMedusa::Relation]
       # @raise [RuntimeError] If no matching entity is found
+      # @raise [SocketError] If the host is unknown
       #
       def find(id)
         result = self.find_by_id(id)
