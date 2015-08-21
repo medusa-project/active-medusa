@@ -81,10 +81,9 @@ class BaseTest < Minitest::Test
     end
   end
 
-  def test_initialize_should_ignore_id_and_uuid
-    model = Item.new(id: 'cats', uuid: 'dogs')
+  def test_initialize_should_ignore_id
+    model = Item.new(id: 'cats')
     assert_nil model.id
-    assert_nil model.uuid
   end
 
   def test_initialize_sets_reasonable_defaults

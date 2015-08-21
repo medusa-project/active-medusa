@@ -22,43 +22,26 @@ module ActiveMedusa
       end
 
       ##
-      # @param id [String] UUID
+      # @param id [String] Repository node URI
       # @return [ActiveMedusa::Relation]
       # @raise [RuntimeError] If no matching entity is found
       #
       def find(id)
-        result = self.find_by_uuid(id)
+        result = self.find_by_id(id)
         raise "Unable to find entity with ID #{id}" unless result
         result
       end
 
       ##
-      # @param id [String]
-      # @return [ActiveMedusa::Relation]
-      #
-      def find_by_id(id)
-        self.where(Configuration.instance.solr_uuid_field => id).
-            facet(false).first
-      end
-
-      ##
-      # @param uri [String] Fedora resource URI
+      # @param id [String] Fedora resource URI
       # @return [ActiveMedusa::Relation]
       # @raise [SocketError] If the host is unknown
       #
-      def find_by_uri(uri)
-        ActiveMedusa::Base.load(uri)
+      def find_by_id(id)
+        ActiveMedusa::Base.load(id)
       end
 
-      ##
-      # Alias of `find_by_id`.
-      #
-      # @param uuid [String]
-      # @return [ActiveMedusa::Relation]
-      #
-      def find_by_uuid(uuid)
-        self.find_by_id(uuid)
-      end
+      alias_method :find_by_uri, :find_by_id
 
       def method_missing(name, *args, &block)
         name_s = name.to_s

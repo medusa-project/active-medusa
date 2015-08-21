@@ -25,7 +25,7 @@ module ActiveMedusa
     include Relationships
     include Transactions
 
-    REJECT_PARAMS = [:id, :uuid]
+    REJECT_PARAMS = [:id]
 
     define_model_callbacks :create, :destroy, :load, :save, :update,
                            only: [:after, :before]
@@ -46,6 +46,7 @@ module ActiveMedusa
     #   @return [String] The instance's repository URL outside of any
     #           transaction.
     attr_accessor :repository_url
+    alias_method :id, :repository_url
 
     # @!attribute requested_slug
     #   @return [String] The requested Fedora URI last path component for new
@@ -60,13 +61,6 @@ module ActiveMedusa
     # @!attribute transaction_url
     #   @return [String] URL of the transaction in which the entity exists.
     attr_accessor :transaction_url
-
-    # @!attribute uuid
-    #   @return [String] The instance's repository-assigned UUID.
-    attr_accessor :uuid
-    alias_method :id, :uuid
-
-    validates :uuid, allow_blank: true, length: { minimum: 36, maximum: 36 }
 
     ##
     # @param predicate [String]
@@ -262,8 +256,8 @@ module ActiveMedusa
 
     ##
     # Persists the entity. For this to work, The entity must already have a
-    # UUID (for existing entities) *or* it must have a parent container URL
-    # (for new entities).
+    # repository URL (for existing entities) *or* it must have a parent
+    # container URL (for new entities).
     #
     # @raise [RuntimeError]
     # @raise [ActiveMedusa::RecordInvalid]
@@ -400,7 +394,6 @@ module ActiveMedusa
     def populate_self_from_graph(graph)
       self.rdf_graph = graph
 
-      self.uuid = graph.any_object('http://fedora.info/definitions/v4/repository#uuid').to_s
       self.parent_url = graph.any_object('http://fedora.info/definitions/v4/repository#hasParent').to_s
 
       # set values of subclass `property` definitions
