@@ -64,7 +64,7 @@
     <div id="content"><div id='filecontents'>
 <h1 id="label-ActiveMedusa">ActiveMedusa</h1>
 
-<p>ActiveMedusa provides a simple ActiveRecord-like interface to a Fedora 4
+<p>ActiveMedusa provides an ActiveRecord-style interface to a Fedora 4
 repository, using Solr for lookup and querying.</p>
 <ul><li>
 <p><strong><a href="https://github.com/medusa-project/active-medusa">GitHub
@@ -85,10 +85,15 @@ predicates  or use existing ones.</p>
 <p>Customizable Solr schema. Although some extra fields are required, their 
 names are up to you.</p>
 </li><li>
+<p>Can work with different Solr indexing strategies, including self-indexing
+and  fcrepo-message-consumer/fcrepo-camel.</p>
+</li><li>
 <p>Supports binary and container nodes, both of which are first-class,
 queryable  entities.</p>
 </li><li>
-<p>Direct read/write access to entities&#39; RDF graphs.</p>
+<p>Supports Fedora transactions.</p>
+</li><li>
+<p>Direct read/write access to entities&#39; source RDF graphs.</p>
 </li><li>
 <p>Supports “belongs-to” and “has-many” relationships between entities.</p>
 </li><li>
@@ -104,10 +109,25 @@ queryable  entities.</p>
 </li><li>
 <p>Can only set references on the owned side</p>
 </li><li>
+<p>Missing support for some Fedora features like moving nodes, versioning,
+etc.</p>
+</li><li>
 <p>Probably a lot more</p>
 </li></ul>
 
+<h1 id="label-Requirements">Requirements</h1>
+<ul><li>
+<p>Ruby 2.x</p>
+</li><li>
+<p>Fedora 4.1.1 or 4.2 (earlier 4.x versions may work but are untested; 4.3
+does  <strong>not</strong> work yet due to the elimination of
+<code>fedora:uuid</code>)</p>
+</li></ul>
+
 <h1 id="label-Installation">Installation</h1>
+
+<p><em>Note: If you are already using ActiveMedusa, skip to Upgrading
+below.</em></p>
 
 <p>Currently ActiveMedusa is not available via rubygems. There are a couple of
 other options:</p>
@@ -137,6 +157,17 @@ you&#39;d like to work with:</p>
 
 <pre class="code ruby"><code class="ruby">$ bundle</code></pre>
 
+<h1 id="label-Upgrading">Upgrading</h1>
+
+<h2 id="label-1.0.0+to+1.1.0">1.0.0 to 1.1.0</h2>
+<ol><li>
+<p>Add <code>config.solr_parent_uri_field</code> to your
+<code>ActiveMedusa::Configuration</code>  initializer.</p>
+</li><li>
+<p>Decide whether you want to use the new <code>ActiveMedusa::Indexable</code>
+module  (see below).</p>
+</li></ol>
+
 <h1 id="label-Usage">Usage</h1>
 
 <h2 id="label-Initializing">Initializing</h2>
@@ -148,43 +179,26 @@ href="http://medusa-project.github.io/active-medusa/ActiveMedusa/Configuration.h
 <pre class="code ruby"><code class="ruby"><span class='const'>ActiveMedusa</span><span class='op'>::</span><span class='const'>Configuration</span><span class='period'>.</span><span class='id identifier rubyid_new'>new</span> <span class='kw'>do</span> <span class='op'>|</span><span class='id identifier rubyid_config'>config</span><span class='op'>|</span>
   <span class='id identifier rubyid_config'>config</span><span class='period'>.</span><span class='id identifier rubyid_fedora_url'>fedora_url</span> <span class='op'>=</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>http://localhost:8080/fcrepo/rest</span><span class='tstring_end'>&#39;</span></span>
   <span class='id identifier rubyid_config'>config</span><span class='period'>.</span><span class='id identifier rubyid_logger'>logger</span> <span class='op'>=</span> <span class='const'>Rails</span><span class='period'>.</span><span class='id identifier rubyid_logger'>logger</span>
-  <span class='id identifier rubyid_config'>config</span><span class='period'>.</span><span class='id identifier rubyid_class_predicate'>class_predicate</span> <span class='op'>=</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>http://example.org/hasClass</span><span class='tstring_end'>&#39;</span></span>
+  <span class='id identifier rubyid_config'>config</span><span class='period'>.</span><span class='id identifier rubyid_class_predicate'>class_predicate</span> <span class='op'>=</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>http://www.w3.org/2000/01/rdf-schema#Class</span><span class='tstring_end'>&#39;</span></span>
   <span class='id identifier rubyid_config'>config</span><span class='period'>.</span><span class='id identifier rubyid_solr_url'>solr_url</span> <span class='op'>=</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>http://localhost:8983/solr</span><span class='tstring_end'>&#39;</span></span>
   <span class='id identifier rubyid_config'>config</span><span class='period'>.</span><span class='id identifier rubyid_solr_core'>solr_core</span> <span class='op'>=</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>collection1</span><span class='tstring_end'>&#39;</span></span>
   <span class='id identifier rubyid_config'>config</span><span class='period'>.</span><span class='id identifier rubyid_solr_more_like_this_endpoint'>solr_more_like_this_endpoint</span> <span class='op'>=</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>/mlt</span><span class='tstring_end'>&#39;</span></span>
   <span class='id identifier rubyid_config'>config</span><span class='period'>.</span><span class='id identifier rubyid_solr_uri_field'>solr_uri_field</span> <span class='op'>=</span> <span class='symbol'>:id</span>
-  <span class='id identifier rubyid_config'>config</span><span class='period'>.</span><span class='id identifier rubyid_solr_class_field'>solr_class_field</span> <span class='op'>=</span> <span class='symbol'>:class_s</span> <span class='comment'># used by ActiveMedusa finder methods
-</span>  <span class='id identifier rubyid_config'>config</span><span class='period'>.</span><span class='id identifier rubyid_solr_uuid_field'>solr_uuid_field</span> <span class='op'>=</span> <span class='symbol'>:uuid_s</span>
+  <span class='id identifier rubyid_config'>config</span><span class='period'>.</span><span class='id identifier rubyid_solr_class_field'>solr_class_field</span> <span class='op'>=</span> <span class='symbol'>:class_s</span>
+  <span class='id identifier rubyid_config'>config</span><span class='period'>.</span><span class='id identifier rubyid_solr_created_field'>solr_created_field</span> <span class='op'>=</span> <span class='symbol'>:created_dts</span>
+  <span class='id identifier rubyid_config'>config</span><span class='period'>.</span><span class='id identifier rubyid_solr_last_modified_field'>solr_last_modified_field</span> <span class='op'>=</span> <span class='symbol'>:last_modified_dts</span>
+  <span class='id identifier rubyid_config'>config</span><span class='period'>.</span><span class='id identifier rubyid_solr_parent_uri_field'>solr_parent_uri_field</span> <span class='op'>=</span> <span class='symbol'>:parent_uri_s</span>
+  <span class='id identifier rubyid_config'>config</span><span class='period'>.</span><span class='id identifier rubyid_solr_uuid_field'>solr_uuid_field</span> <span class='op'>=</span> <span class='symbol'>:uuid_s</span>
   <span class='id identifier rubyid_config'>config</span><span class='period'>.</span><span class='id identifier rubyid_solr_default_search_field'>solr_default_search_field</span> <span class='op'>=</span> <span class='symbol'>:searchall_txt</span>
-  <span class='id identifier rubyid_config'>config</span><span class='period'>.</span><span class='id identifier rubyid_solr_facet_fields'>solr_facet_fields</span> <span class='op'>=</span> <span class='lbracket'>[</span><span class='symbol'>:collection_facet</span><span class='comma'>,</span> <span class='symbol'>:creator_facet</span><span class='comma'>,</span>
-                              <span class='symbol'>:date_facet</span><span class='comma'>,</span> <span class='symbol'>:format_facet</span><span class='comma'>,</span> <span class='symbol'>:language_facet</span><span class='rbracket'>]</span>
+  <span class='id identifier rubyid_config'>config</span><span class='period'>.</span><span class='id identifier rubyid_solr_default_facetable_fields'>solr_default_facetable_fields</span> <span class='op'>=</span> <span class='lbracket'>[</span>
+      <span class='symbol'>:collection_facet</span><span class='comma'>,</span> <span class='symbol'>:creator_facet</span><span class='comma'>,</span> <span class='symbol'>:date_facet</span><span class='comma'>,</span> <span class='symbol'>:format_facet</span><span class='comma'>,</span>
+      <span class='symbol'>:language_facet</span><span class='rbracket'>]</span>
 <span class='kw'>end</span>
 </code></pre>
 
 <p>(If you are using Rails, you would put this in
 <code>config/initializers/active_medusa.rb</code>, and then restart your
 application.)</p>
-
-<h3 id="label-Configuring+a+Solr+update+strategy">Configuring a Solr update strategy</h3>
-
-<p>ActiveMedusa does not write to Solr; you must devise a way to maintain your
-Solr index without ActiveMedusa&#39;s help. One option would be to use a
-strategy like <a
-href="https://github.com/fcrepo4/fcrepo-message-consumer">fcrepo-message-consumer</a>
-(deprecated) or <a
-href="https://github.com/fcrepo4/fcrepo-camel">fcrepo-camel</a> which keep
-Solr updated by listening for changes in your repository. Another option
-would be to populate Solr from your application, such as by using
-<code>after_save</code> callbacks on your ActiveMedusa models.</p>
-
-<p>Getting this working is beyond the scope of ActiveMedusa; but keep in mind
-that any Solr fields referred to in your
-<code>ActiveMedusa::Configuration</code> object, as well as any referred to
-in your entities (see below), need to exist in Solr and get populated some
-way or other. In the example above, <code>searchall_txt</code> is
-presumably a dynamic <code>copyField</code> that Solr will populate itself,
-and likewise the <code>*_facet</code> fields; but all of the rest need to
-exist, either as regular or dynamic fields.</p>
 
 <h2 id="label-Defining+Entities">Defining Entities</h2>
 
@@ -200,7 +214,7 @@ which all of your entities must inherit.</p>
 
 <pre class="code ruby"><code class="ruby"><span class='comment'># collection.rb
 </span><span class='kw'>class</span> <span class='const'>Collection</span> <span class='op'>&lt;</span> <span class='const'>ActiveMedusa</span><span class='op'>::</span><span class='const'>Container</span>
-  <span class='id identifier rubyid_entity_class_uri'>entity_class_uri</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>http://example.org/Collection</span><span class='tstring_end'>&#39;</span></span>
+  <span class='id identifier rubyid_entity_class_uri'>entity_class_uri</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>http://pcdm.org/models#Collection</span><span class='tstring_end'>&#39;</span></span>
   <span class='id identifier rubyid_has_many'>has_many</span> <span class='symbol'>:items</span>
   <span class='id identifier rubyid_property'>property</span> <span class='symbol'>:title</span><span class='comma'>,</span>
            <span class='label'>type:</span> <span class='symbol'>:string</span><span class='comma'>,</span>
@@ -210,12 +224,12 @@ which all of your entities must inherit.</p>
 
 <span class='comment'># item.rb
 </span><span class='kw'>class</span> <span class='const'>Item</span> <span class='op'>&lt;</span> <span class='const'>ActiveMedusa</span><span class='op'>::</span><span class='const'>Container</span>
-  <span class='id identifier rubyid_entity_class_uri'>entity_class_uri</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>http://example.org/Item</span><span class='tstring_end'>&#39;</span></span>
+  <span class='id identifier rubyid_entity_class_uri'>entity_class_uri</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>http://pcdm.org/models#Object</span><span class='tstring_end'>&#39;</span></span>
   <span class='id identifier rubyid_has_many'>has_many</span> <span class='symbol'>:items</span>
   <span class='id identifier rubyid_has_many'>has_many</span> <span class='symbol'>:bytestreams</span>
-  <span class='id identifier rubyid_belongs_to'>belongs_to</span> <span class='symbol'>:collection</span><span class='comma'>,</span> <span class='label'>predicate:</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>http://example.org/isMemberOf</span><span class='tstring_end'>&#39;</span></span><span class='comma'>,</span>
+  <span class='id identifier rubyid_belongs_to'>belongs_to</span> <span class='symbol'>:collection</span><span class='comma'>,</span> <span class='label'>rdf_predicate:</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>http://example.org/isMemberOf</span><span class='tstring_end'>&#39;</span></span><span class='comma'>,</span>
              <span class='label'>solr_field:</span> <span class='symbol'>:collection_s</span>
-  <span class='id identifier rubyid_belongs_to'>belongs_to</span> <span class='symbol'>:item</span><span class='comma'>,</span> <span class='label'>predicate:</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>http://example.org/isChildOf</span><span class='tstring_end'>&#39;</span></span><span class='comma'>,</span>
+  <span class='id identifier rubyid_belongs_to'>belongs_to</span> <span class='symbol'>:item</span><span class='comma'>,</span> <span class='label'>rdf_predicate:</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>http://example.org/isChildOf</span><span class='tstring_end'>&#39;</span></span><span class='comma'>,</span>
              <span class='label'>solr_field:</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>parent_s</span><span class='tstring_end'>&#39;</span></span><span class='comma'>,</span> <span class='label'>name:</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>parent</span><span class='tstring_end'>&#39;</span></span>
   <span class='id identifier rubyid_property'>property</span> <span class='symbol'>:full_text</span><span class='comma'>,</span>
            <span class='label'>type:</span> <span class='symbol'>:string</span><span class='comma'>,</span>
@@ -225,8 +239,8 @@ which all of your entities must inherit.</p>
 
 <span class='comment'># bytestream.rb
 </span><span class='kw'>class</span> <span class='const'>Bytestream</span> <span class='op'>&lt;</span> <span class='const'>ActiveMedusa</span><span class='op'>::</span><span class='const'>Binary</span>
-  <span class='id identifier rubyid_entity_class_uri'>entity_class_uri</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>http://example.org/Bytestream</span><span class='tstring_end'>&#39;</span></span>
-  <span class='id identifier rubyid_belongs_to'>belongs_to</span> <span class='symbol'>:item</span><span class='comma'>,</span> <span class='label'>predicate:</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>http://example.org/isOwnedBy</span><span class='tstring_end'>&#39;</span></span>
+  <span class='id identifier rubyid_entity_class_uri'>entity_class_uri</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>http://pcdm.org/models#File</span><span class='tstring_end'>&#39;</span></span>
+  <span class='id identifier rubyid_belongs_to'>belongs_to</span> <span class='symbol'>:item</span><span class='comma'>,</span> <span class='label'>rdf_predicate:</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>http://example.org/isOwnedBy</span><span class='tstring_end'>&#39;</span></span>
 <span class='kw'>end</span>
 </code></pre>
 
@@ -282,6 +296,72 @@ definitions:</em></p>
   <span class='kw'>class</span> <span class='const'>Item</span> <span class='op'>&lt;</span> <span class='const'>ActiveMedusa</span><span class='op'>::</span><span class='const'>Container</span>
     <span class='id identifier rubyid_belongs_to'>belongs_to</span> <span class='symbol'>:collection</span><span class='comma'>,</span> <span class='label'>predicate:</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>http://example.org/isMemberOf</span><span class='tstring_end'>&#39;</span></span><span class='comma'>,</span>
                <span class='label'>solr_field:</span> <span class='symbol'>:collection_s</span><span class='comma'>,</span> <span class='label'>class_name:</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>Entities::Collection</span><span class='tstring_end'>&#39;</span></span>
+  <span class='kw'>end</span>
+<span class='kw'>end</span>
+</code></pre>
+
+<h2 id="label-Configuring+a+Solr+update+strategy">Configuring a Solr update strategy</h2>
+
+<p>By default, ActiveMedusa does not write to Solr, yet it is going to expect
+that something will. You have a couple of options for dealing with this.
+One would be to use a strategy like <a
+href="https://github.com/fcrepo4/fcrepo-message-consumer">fcrepo-message-consumer</a>
+(deprecated) or <a
+href="https://github.com/fcrepo4/fcrepo-camel">fcrepo-camel</a> which keep
+Solr updated by listening for changes in your repository. Another would be
+to populate Solr from your application.</p>
+
+<p>See one of the next sections for info on getting this working.</p>
+
+<h3 id="label-Updating+Solr+from+your+application">Updating Solr from your application</h3>
+
+<p>ActiveMedusa provides an optional helper module, <code>Indexable</code>,
+that will assist you in keeping Solr updated yourself. To use it, include
+it in any entity class:</p>
+
+<pre class="code ruby"><code class="ruby"># item.rb
+class Item &lt; ActiveMedusa::Container
+  include ActiveMedusa::Indexable
+  ...
+end
+</code></pre>
+
+<p><code>Item</code> instances will now be created, updated, and deleted in
+Solr automatically.</p>
+
+<p>See the <a
+href="http://medusa-project.github.io/active-medusa/ActiveMedusa/Indexable.html">documentation
+for Indexable</a> if you wish to change the way your entities get indexed.</p>
+
+<h3 id="label-Updating+Solr+with+fcrepo-camel">Updating Solr with fcrepo-camel</h3>
+
+<p>For this, you will need to get fcrepo-camel working, which is covered <a
+href="https://wiki.duraspace.org/display/FEDORA4x/Setup+Camel+Message+Integrations">here</a>
+and is beyond the scope of this readme. You might use an <a
+href="https://wiki.duraspace.org/display/FEDORA4x/Indexing+Transformations">indexing
+transformation</a> with it, or you might write custom code to respond to
+Fedora change messages. Either way, you will need to account for all of the
+same fields as <code>ActiveMedusa::Indexable.solr_document</code> does;
+take a look at its implementation for details.</p>
+
+<p><em>Note: with this strategy, do <strong>not</strong> <code>include
+ActiveMedusa::Indexable</code> in your models, as above.</em></p>
+
+<p>The <a
+href="https://wiki.duraspace.org/display/FEDORA4x/External+Search">Fedora
+wiki</a> shows indexable nodes receiving
+<code>indexing:hasIndexingTransformation</code> and <code>rdf:type</code>
+triples. If you want to use these the way it prescribes, you will have to
+add them to your entities manually – like this, for example:</p>
+
+<pre class="code ruby"><code class="ruby"><span class='kw'>class</span> <span class='const'>Item</span> <span class='op'>&lt;</span> <span class='const'>ActiveMedusa</span><span class='op'>::</span><span class='const'>Container</span>
+  <span class='id identifier rubyid_before_create'>before_create</span> <span class='symbol'>:add_indexing_triples</span>
+
+  <span class='kw'>def</span> <span class='id identifier rubyid_add_indexing_triples'>add_indexing_triples</span>
+    <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_rdf_graph'>rdf_graph</span> <span class='op'>&lt;&lt;</span> <span class='lbracket'>[</span><span class='kw'>nil</span><span class='comma'>,</span> <span class='const'>RDF</span><span class='op'>::</span><span class='const'>URI</span><span class='lparen'>(</span><span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>http://fedora.info/definitions/v4/indexing#hasIndexingTransformation</span><span class='tstring_end'>&#39;</span></span><span class='rparen'>)</span><span class='comma'>,</span>
+        <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>default</span><span class='tstring_end'>&#39;</span></span><span class='rbracket'>]</span>
+    <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_rdf_graph'>rdf_graph</span> <span class='op'>&lt;&lt;</span> <span class='lbracket'>[</span><span class='kw'>nil</span><span class='comma'>,</span> <span class='const'>RDF</span><span class='op'>::</span><span class='const'>URI</span><span class='lparen'>(</span><span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>http://www.w3.org/1999/02/22-rdf-syntax-ns#type</span><span class='tstring_end'>&#39;</span></span><span class='rparen'>)</span><span class='comma'>,</span>
+        <span class='const'>RDF</span><span class='op'>::</span><span class='const'>URI</span><span class='lparen'>(</span><span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>http://fedora.info/definitions/v4/indexing#Indexable</span><span class='tstring_end'>&#39;</span></span><span class='rparen'>)</span><span class='rbracket'>]</span>
   <span class='kw'>end</span>
 <span class='kw'>end</span>
 </code></pre>
@@ -361,46 +441,50 @@ This method accepts a parameter list into which you can pass any updated
 <p>Call <code>delete</code> on an entity. This method accepts an optional
 boolean parameter that will delete its tombstone as well.</p>
 
+<p><em>Note: Entities will not be deleted from Solr until the Solr index has
+been committed. ActiveMedusa will not commit it automatically.</em></p>
+
 <h2 id="label-Loading+Entities">Loading Entities</h2>
 
 <p><em>Note: Newly created entities cannot be loaded until the Solr index has
 been committed. ActiveMedusa will not commit it automatically.</em></p>
 
-<p>To load an item by some property, you can use one of the finder methods,
-like <code>find</code>, which will find by repository UUID:</p>
+<h3 id="label-By+UUID">By UUID</h3>
 
 <pre class="code ruby"><code class="ruby"><span class='id identifier rubyid_item'>item</span> <span class='op'>=</span> <span class='const'>Item</span><span class='period'>.</span><span class='id identifier rubyid_find'>find</span><span class='lparen'>(</span><span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>some UUID</span><span class='tstring_end'>&#39;</span></span><span class='rparen'>)</span>
 </code></pre>
 
-<p>If <code>find</code> finds multiple entities, it will return only one. This
-is the only finder method that will raise an error if nothing is found.</p>
+<p>This is the only finder method that will raise an error if nothing is
+found.</p>
 
-<p>Alternatively, you can find by repository URI:</p>
+<h3 id="label-By+Repository+URI">By Repository URI</h3>
 
 <pre class="code ruby"><code class="ruby"><span class='id identifier rubyid_item'>item</span> <span class='op'>=</span> <span class='const'>Item</span><span class='period'>.</span><span class='id identifier rubyid_find_by_uri'>find_by_uri</span><span class='lparen'>(</span><span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>http://localhost:8080/fcrepo/rest/kumquats</span><span class='tstring_end'>&#39;</span></span><span class='rparen'>)</span>
 </code></pre>
 
-<p>Then, there are the <code>find_by_x</code> methods, where <code>x</code>
-corresponds to some <code>property</code>:</p>
+<h3 id="label-By+Property">By Property</h3>
+
+<p>When you use <code>property</code> statements in entity classes, a
+<code>find_by_x</code> method is auto-generated for each:</p>
 
 <pre class="code ruby"><code class="ruby"><span class='id identifier rubyid_item'>item</span> <span class='op'>=</span> <span class='const'>Item</span><span class='period'>.</span><span class='id identifier rubyid_find_by_title'>find_by_title</span><span class='lparen'>(</span><span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>2003 Global Outlook for 6-Quart Slow-Cookers</span><span class='tstring_end'>&#39;</span></span><span class='rparen'>)</span>
 </code></pre>
 
-<p>Once an entity has been loaded, it can be reloaded:</p>
+<h3 id="label-Reloading">Reloading</h3>
 
 <pre class="code ruby"><code class="ruby"><span class='id identifier rubyid_item'>item</span><span class='period'>.</span><span class='id identifier rubyid_reload!'>reload!</span>
 </code></pre>
 
 <h3 id="label-Loading+Entities+of+Unknown+Type">Loading Entities of Unknown Type</h3>
 
-<p>Suppose you have an entity URI or UUID, but you are unsure of the class of
-the entity it identifies – you don&#39;t know whether it&#39;s an
-<code>Item</code> or a <code>Collection</code>, and therefore don&#39;t
-know which class <code>find</code> method to use. In that case, you can
-call <code>find</code> on <code>ActiveMedusa::Container</code> to return an
-instance of the correct class:</p>
+<p>Suppose you have an entity URI, but are unsure of the class of the entity
+it identifies – you don&#39;t know whether it&#39;s an <code>Item</code> or
+a <code>Collection</code>, and therefore don&#39;t know which class
+<code>find</code> method to use. In that case, you can call
+<code>load</code> on <code>ActiveMedusa::Base</code> to return an instance
+of the correct class:</p>
 
-<pre class="code ruby"><code class="ruby"><span class='id identifier rubyid_item_or_collection'>item_or_collection</span> <span class='op'>=</span> <span class='const'>ActiveMedusa</span><span class='op'>::</span><span class='const'>Container</span><span class='period'>.</span><span class='id identifier rubyid_find'>find</span><span class='lparen'>(</span><span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>...</span><span class='tstring_end'>&#39;</span></span><span class='rparen'>)</span>
+<pre class="code ruby"><code class="ruby"><span class='id identifier rubyid_item_or_collection'>item_or_collection</span> <span class='op'>=</span> <span class='const'>ActiveMedusa</span><span class='op'>::</span><span class='const'>Base</span><span class='period'>.</span><span class='id identifier rubyid_load'>load</span><span class='lparen'>(</span><span class='id identifier rubyid_uri'>uri</span><span class='rparen'>)</span>
 </code></pre>
 
 <h3 id="label-Reading+-26+Writing+Metadata">Reading &amp; Writing Metadata</h3>
@@ -467,7 +551,7 @@ above, a <code>Bytestream</code> can be initialized like an
 <pre class="code ruby"><code class="ruby"><span class='id identifier rubyid_b'>b</span> <span class='op'>=</span> <span class='const'>Bytestream</span><span class='period'>.</span><span class='id identifier rubyid_new'>new</span><span class='lparen'>(</span><span class='label'>parent_url:</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>http://url/of/parent/container</span><span class='tstring_end'>&#39;</span></span><span class='rparen'>)</span>
 </code></pre>
 
-<p>But before it can be saved, you will want to associate some data with it.
+<p>Before saving it, you will probably want to associate some data with it.
 You can specify a file to upload:</p>
 
 <pre class="code ruby"><code class="ruby"><span class='id identifier rubyid_b'>b</span><span class='period'>.</span><span class='id identifier rubyid_upload_pathname'>upload_pathname</span> <span class='op'>=</span> <span class='const'>File</span><span class='period'>.</span><span class='id identifier rubyid_join'>join</span><span class='lparen'>(</span><span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>path</span><span class='tstring_end'>&#39;</span></span><span class='comma'>,</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>to</span><span class='tstring_end'>&#39;</span></span><span class='comma'>,</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>a</span><span class='tstring_end'>&#39;</span></span><span class='comma'>,</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>file.tif</span><span class='tstring_end'>&#39;</span></span><span class='rparen'>)</span>
@@ -496,19 +580,6 @@ binary nodes have supplementary metadata available at the
 that will be updated when you call <code>save</code> on an already-saved
 binary resource, A binary entity&#39;s RDF graph is available via its
 <code>rdf_graph</code> accessor, just like a container.</p>
-
-<h3 id="label-Accessing+Binary+Nodes">Accessing Binary Nodes</h3>
-
-<p>Binary nodes are not indexed in Solr. If you want to be able to retrieve
-them later via ActiveMedusa, you need to make sure they are accessible via
-a relationship with some other entity. In the example above,
-<code>Item</code> has a one-to-many relationship with
-<code>Bytestream</code>, which makes its bytestreams accessible via the
-<code>bytestreams</code> accessor:</p>
-
-<pre class="code ruby"><code class="ruby">item = Item.find(&#39;..&#39;)
-item.bytestreams.each { |b| .. }
-</code></pre>
 
 <h2 id="label-Searching+For+Entities">Searching For Entities</h2>
 
@@ -567,18 +638,39 @@ implicitly, such as by <code>each</code>.</p>
 <span class='const'>Item</span><span class='period'>.</span><span class='id identifier rubyid_all'>all</span><span class='period'>.</span><span class='id identifier rubyid_facet'>facet</span><span class='lparen'>(</span><span class='lbracket'>[</span><span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>type:Book</span><span class='tstring_end'>&#39;</span></span><span class='comma'>,</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>subject:Citrus</span><span class='tstring_end'>&#39;</span></span><span class='rbracket'>]</span><span class='rparen'>)</span>
 </code></pre>
 
+<p>The default list of facetable fields is set in
+<code>ActiveMedusa::Configuration.solr_default_facetable_fields</code>.
+<code>ActiveMedusa::Relation</code>&#39;s initializer will pre-populate its
+<code>facetable_fields</code> property with the contents of this array. But
+this property can be re-set at runtime. So, if your Configuration object
+were to contain:</p>
+
+<pre class="code ruby"><code class="ruby"><span class='const'>ActiveMedusa</span><span class='op'>::</span><span class='const'>Configuration</span><span class='period'>.</span><span class='id identifier rubyid_new'>new</span> <span class='kw'>do</span> <span class='op'>|</span><span class='id identifier rubyid_config'>config</span><span class='op'>|</span>
+  <span class='id identifier rubyid_config'>config</span><span class='period'>.</span><span class='id identifier rubyid_solr_default_facetable_fields'>solr_default_facetable_fields</span> <span class='op'>=</span> <span class='lbracket'>[</span>
+      <span class='symbol'>:collection_facet</span><span class='comma'>,</span> <span class='symbol'>:creator_facet</span><span class='comma'>,</span> <span class='symbol'>:date_facet</span><span class='comma'>,</span> <span class='symbol'>:format_facet</span><span class='comma'>,</span>
+      <span class='symbol'>:language_facet</span><span class='rbracket'>]</span>
+<span class='kw'>end</span>
+</code></pre>
+
+<p>Then, say you wanted to return more than just these facets, just once:</p>
+
+<pre class="code ruby"><code class="ruby">config = ActiveMedusa::Configuration.instance
+fields = config.solr_default_facetable_fields + [:type_facet, :publisher_facet]
+items = Item.where(...).facetable_fields(fields)
+</code></pre>
+
 <p>To access returned facets, you might do something like:</p>
 
-<pre class="code ruby"><code class="ruby"><span class='id identifier rubyid_items'>items</span> <span class='op'>=</span> <span class='const'>Item</span><span class='period'>.</span><span class='id identifier rubyid_where'>where</span><span class='lparen'>(</span><span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>..</span><span class='tstring_end'>&#39;</span></span><span class='rparen'>)</span>
-<span class='comment'># facet_fields returns an array of ActiveMedusa::Facet objects.
-</span><span class='id identifier rubyid_items'>items</span><span class='period'>.</span><span class='id identifier rubyid_facet_fields'>facet_fields</span><span class='period'>.</span><span class='id identifier rubyid_each'>each</span> <span class='kw'>do</span> <span class='op'>|</span><span class='id identifier rubyid_facet'>facet</span><span class='op'>|</span>
-  <span class='comment'># A Facet may have one or more ActiveMedusa::Facet::Term objects.
-</span>  <span class='id identifier rubyid_facet'>facet</span><span class='period'>.</span><span class='id identifier rubyid_terms'>terms</span><span class='period'>.</span><span class='id identifier rubyid_each'>each</span> <span class='kw'>do</span> <span class='op'>|</span><span class='id identifier rubyid_term'>term</span><span class='op'>|</span>
-    <span class='id identifier rubyid_puts'>puts</span> <span class='id identifier rubyid_term'>term</span><span class='period'>.</span><span class='id identifier rubyid_count'>count</span>
-    <span class='id identifier rubyid_puts'>puts</span> <span class='id identifier rubyid_term'>term</span><span class='period'>.</span><span class='id identifier rubyid_label'>label</span>
-    <span class='id identifier rubyid_puts'>puts</span> <span class='id identifier rubyid_term'>term</span><span class='period'>.</span><span class='id identifier rubyid_name'>name</span>
-  <span class='kw'>end</span>
-<span class='kw'>end</span>
+<pre class="code ruby"><code class="ruby">items = Item.where(...)
+# facet_fields returns an array of ActiveMedusa::Facet objects.
+items.facet_fields.each do |facet|
+  # A Facet may have one or more ActiveMedusa::Facet::Term objects.
+  facet.terms.each do |term|
+    puts term.count
+    puts term.label
+    puts term.name
+  end
+end
 </code></pre>
 
 <p>Faceting is enabled by default. To improve performance, you can turn it off
@@ -599,23 +691,36 @@ sorted by relevance. A relevance score can be accessed via the transient
 href="https://wiki.apache.org/solr/MoreLikeThisHandler">MoreLikeThisHandler</a>
 enabled in your <code>solrconfig.xml</code>, you can query by similarity:</p>
 
-<pre class="code ruby"><code class="ruby"><span class='id identifier rubyid_item'>item</span> <span class='op'>=</span> <span class='const'>Item</span><span class='period'>.</span><span class='id identifier rubyid_find'>find</span><span class='lparen'>(</span><span class='id identifier rubyid_id'>id</span><span class='rparen'>)</span><span class='period'>.</span><span class='id identifier rubyid_more_like_this'>more_like_this</span><span class='period'>.</span><span class='id identifier rubyid_limit'>limit</span><span class='lparen'>(</span><span class='int'>5</span><span class='rparen'>)</span>
+<pre class="code ruby"><code class="ruby"><span class='id identifier rubyid_items'>items</span> <span class='op'>=</span> <span class='const'>Item</span><span class='period'>.</span><span class='id identifier rubyid_find'>find</span><span class='lparen'>(</span><span class='id identifier rubyid_id'>id</span><span class='rparen'>)</span><span class='period'>.</span><span class='id identifier rubyid_more_like_this'>more_like_this</span><span class='period'>.</span><span class='id identifier rubyid_limit'>limit</span><span class='lparen'>(</span><span class='int'>5</span><span class='rparen'>)</span>
 </code></pre>
 
 <h2 id="label-Transactions">Transactions</h2>
 
-<p>Simply wrap any CRUD operation(s) inside a block:</p>
+<p>The example below illustrates a transaction. Anything inside the block will
+have access to the base URL of the transaction as <code>tx_url</code>. To
+create, update, or delete an entity within the transaction, use
+<code>create</code>, <code>update</code>, <code>delete</code>,
+<code>save</code>, etc. as usual, but set the entity&#39;s
+<code>transaction_url</code> attribute first:</p>
 
-<pre class="code ruby"><code class="ruby"><span class='const'>ActiveMedusa</span><span class='op'>::</span><span class='const'>Base</span><span class='period'>.</span><span class='id identifier rubyid_transaction'>transaction</span> <span class='kw'>do</span> <span class='op'>|</span><span class='id identifier rubyid_tx_url'>tx_url</span><span class='op'>|</span>
-  <span class='comment'># Any code present here will occur within a transaction.
-</span>  <span class='comment'># Raising an error will roll back the transaction.
-</span>  <span class='comment'># Otherwise, it will commit automatically when the block ends.
-</span><span class='kw'>end</span>
+<pre class="code ruby"><code class="ruby">ActiveMedusa::Base.transaction do |tx_url|
+  # Any code present here will occur within a transaction.
+  # Raising an error will roll back the transaction.
+  # Otherwise, it will commit automatically when the block ends.
+  item = Item.find(..)
+  item.transaction_url = tx_url
+  item.update!(some_property: &#39;kumquats&#39;)
+end
 </code></pre>
 
-<p>Note: it is not possible to query within a transaction. (Fedora does not
+<p><em>Note: if you are using fcrepo-camel, keep in mind that Fedora does not
 dispatch messages about operations that happen inside transactions until
-they have been committed.)</p>
+they have been committed, meaning you won&#39;t be able to query for
+entities created within the same transaction.</em></p>
+
+<p><em>Note: if you are using <code>ActiveMedusa::Indexable</code>, keep in
+mind that rolling back a transaction will <strong>not</strong> roll back
+any changes to Solr made from within the transaction.</em></p>
 
 <h2 id="label-Validation">Validation</h2>
 
@@ -632,8 +737,7 @@ entities.</p>
 
 <p>Because <code>ActiveMedusa::Base</code> includes
 <code>ActiveModel::Model</code>, your ActiveMedusa entities should work
-perfectly well with Rails&#39; FormHelper. (Other form frameworks are
-untested.)</p>
+perfectly well with Rails&#39; FormHelper.</p>
 
 <h2 id="label-Callbacks">Callbacks</h2>
 
@@ -670,6 +774,29 @@ callbacks:</p>
   <span class='kw'>end</span>
 <span class='kw'>end</span>
 </code></pre>
+
+<h1 id="label-Versioning">Versioning</h1>
+
+<p>ActiveMedusa uses <a href="http://semver.org">semantic versioning</a>.</p>
+
+<h1 id="label-Version+History">Version History</h1>
+
+<h2 id="label-1.1.0">1.1.0</h2>
+<ul><li>
+<p>Added optional automatic Solr indexing via
+<code>ActiveMedusa::Indexable</code></p>
+</li><li>
+<p>Added <code>ActiveMedusa::Configuration.solr_parent_uri_field</code></p>
+</li><li>
+<p>Documentation improvements</p>
+</li><li>
+<p>Log to stdout by default</p>
+</li></ul>
+
+<h2 id="label-1.0.0">1.0.0</h2>
+<ul><li>
+<p>First release.</p>
+</li></ul>
 
 <h1 id="label-Development">Development</h1>
 
@@ -715,9 +842,9 @@ feature&#39;</code>)</p>
 </div></div>
 
     <div id="footer">
-  Generated on Tue Jul 14 11:35:40 2015 by
+  Generated on Fri Aug 21 12:19:19 2015 by
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
-  0.8.7.6 (ruby-2.1.1).
+  0.8.7.6 (ruby-2.2.2).
 </div>
 
   </body>

@@ -304,7 +304,6 @@
       <pre class="lines">
 
 
-62
 63
 64
 65
@@ -318,10 +317,11 @@
 73
 74
 75
-76</pre>
+76
+77</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/active_medusa/querying.rb', line 62</span>
+      <pre class="code"><span class="info file"># File 'lib/active_medusa/querying.rb', line 63</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_method_missing'>method_missing</span><span class='lparen'>(</span><span class='id identifier rubyid_name'>name</span><span class='comma'>,</span> <span class='op'>*</span><span class='id identifier rubyid_args'>args</span><span class='comma'>,</span> <span class='op'>&amp;</span><span class='id identifier rubyid_block'>block</span><span class='rparen'>)</span>
   <span class='id identifier rubyid_name_s'>name_s</span> <span class='op'>=</span> <span class='id identifier rubyid_name'>name</span><span class='period'>.</span><span class='id identifier rubyid_to_s'>to_s</span>
@@ -615,6 +615,24 @@
     </li>
   
 </ul>
+<p class="tag_title">Raises:</p>
+<ul class="raise">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt>SocketError</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'>
+<p>If the host is unknown</p>
+</div>
+      
+    </li>
+  
+</ul>
 
 </div><table class="source_code">
   <tr>
@@ -622,12 +640,12 @@
       <pre class="lines">
 
 
-48
 49
-50</pre>
+50
+51</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/active_medusa/querying.rb', line 48</span>
+      <pre class="code"><span class="info file"># File 'lib/active_medusa/querying.rb', line 49</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_find_by_uri'>find_by_uri</span><span class='lparen'>(</span><span class='id identifier rubyid_uri'>uri</span><span class='rparen'>)</span>
   <span class='const'>ActiveMedusa</span><span class='op'>::</span><span class='const'>Base</span><span class='period'>.</span><span class='id identifier rubyid_load'>load</span><span class='lparen'>(</span><span class='id identifier rubyid_uri'>uri</span><span class='rparen'>)</span>
@@ -691,12 +709,12 @@
       <pre class="lines">
 
 
-58
 59
-60</pre>
+60
+61</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/active_medusa/querying.rb', line 58</span>
+      <pre class="code"><span class="info file"># File 'lib/active_medusa/querying.rb', line 59</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_find_by_uuid'>find_by_uuid</span><span class='lparen'>(</span><span class='id identifier rubyid_uuid'>uuid</span><span class='rparen'>)</span>
   <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_find_by_id'>find_by_id</span><span class='lparen'>(</span><span class='id identifier rubyid_uuid'>uuid</span><span class='rparen'>)</span>
@@ -750,12 +768,12 @@
       <pre class="lines">
 
 
-81
 82
-83</pre>
+83
+84</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/active_medusa/querying.rb', line 81</span>
+      <pre class="code"><span class="info file"># File 'lib/active_medusa/querying.rb', line 82</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_none'>none</span>
   <span class='const'>Relation</span><span class='period'>.</span><span class='id identifier rubyid_new'>new</span>
@@ -802,7 +820,6 @@
       <pre class="lines">
 
 
-85
 86
 87
 88
@@ -812,10 +829,11 @@
 92
 93
 94
-95</pre>
+95
+96</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/active_medusa/querying.rb', line 85</span>
+      <pre class="code"><span class="info file"># File 'lib/active_medusa/querying.rb', line 86</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_respond_to_missing?'>respond_to_missing?</span><span class='lparen'>(</span><span class='id identifier rubyid_method_name'>method_name</span><span class='comma'>,</span> <span class='id identifier rubyid_include_private'>include_private</span> <span class='op'>=</span> <span class='kw'>false</span><span class='rparen'>)</span>
   <span class='id identifier rubyid_method_name_s'>method_name_s</span> <span class='op'>=</span> <span class='id identifier rubyid_method_name'>method_name</span><span class='period'>.</span><span class='id identifier rubyid_to_s'>to_s</span>
@@ -838,9 +856,9 @@
 </div>
 
     <div id="footer">
-  Generated on Tue Jul 14 11:35:40 2015 by
+  Generated on Fri Aug 21 12:19:19 2015 by
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
-  0.8.7.6 (ruby-2.1.1).
+  0.8.7.6 (ruby-2.2.2).
 </div>
 
   </body>

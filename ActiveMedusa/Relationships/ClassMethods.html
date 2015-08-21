@@ -410,7 +410,8 @@
 84
 85
 86
-87</pre>
+87
+88</pre>
     </td>
     <td>
       <pre class="code"><span class="info file"># File 'lib/active_medusa/relationships.rb', line 41</span>
@@ -431,7 +432,8 @@
   <span class='id identifier rubyid_self_'>self_</span> <span class='op'>=</span> <span class='kw'>self</span>
   <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_class'>class</span><span class='period'>.</span><span class='id identifier rubyid_instance_eval'>instance_eval</span> <span class='kw'>do</span>
     <span class='cvar'>@@associations</span> <span class='op'>&lt;&lt;</span> <span class='const'>ActiveMedusa</span><span class='op'>::</span><span class='const'>Association</span><span class='period'>.</span><span class='id identifier rubyid_new'>new</span><span class='lparen'>(</span>
-        <span class='id identifier rubyid_options'>options</span><span class='period'>.</span><span class='id identifier rubyid_merge'>merge</span><span class='lparen'>(</span><span class='label'>source_class:</span> <span class='id identifier rubyid_self_'>self_</span><span class='comma'>,</span>
+        <span class='id identifier rubyid_options'>options</span><span class='period'>.</span><span class='id identifier rubyid_merge'>merge</span><span class='lparen'>(</span><span class='label'>name:</span> <span class='id identifier rubyid_options'>options</span><span class='lbracket'>[</span><span class='symbol'>:name</span><span class='rbracket'>]</span> <span class='op'>||</span> <span class='id identifier rubyid_entity'>entity</span><span class='comma'>,</span>
+                      <span class='label'>source_class:</span> <span class='id identifier rubyid_self_'>self_</span><span class='comma'>,</span>
                       <span class='label'>type:</span> <span class='const'>ActiveMedusa</span><span class='op'>::</span><span class='const'>Association</span><span class='op'>::</span><span class='const'>Type</span><span class='op'>::</span><span class='const'>BELONGS_TO</span><span class='comma'>,</span>
                       <span class='label'>target_class:</span> <span class='id identifier rubyid_entity_class'>entity_class</span><span class='rparen'>)</span><span class='rparen'>)</span>
   <span class='kw'>end</span>
@@ -552,7 +554,6 @@
       <pre class="lines">
 
 
-95
 96
 97
 98
@@ -582,10 +583,11 @@
 122
 123
 124
-125</pre>
+125
+126</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/active_medusa/relationships.rb', line 95</span>
+      <pre class="code"><span class="info file"># File 'lib/active_medusa/relationships.rb', line 96</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_has_many'>has_many</span><span class='lparen'>(</span><span class='id identifier rubyid_entities'>entities</span><span class='comma'>,</span> <span class='id identifier rubyid_options'>options</span> <span class='op'>=</span> <span class='lbrace'>{</span><span class='rbrace'>}</span><span class='rparen'>)</span>
   <span class='id identifier rubyid_raise'>raise</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>Cannot define a `has_many` relationship named `children`.</span><span class='tstring_end'>&#39;</span></span> <span class='kw'>if</span>
@@ -628,9 +630,9 @@
 </div>
 
     <div id="footer">
-  Generated on Tue Jul 14 11:35:41 2015 by
+  Generated on Fri Aug 21 12:19:19 2015 by
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
-  0.8.7.6 (ruby-2.1.1).
+  0.8.7.6 (ruby-2.2.2).
 </div>
 
   </body>

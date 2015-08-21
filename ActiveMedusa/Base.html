@@ -2203,8 +2203,7 @@ an RDF predicate and Solr field. Example:</p>
   <div class="discussion">
     
 <p>Destroys the instance&#39;s corresponding repository node, marks the
-instance as destroyed, and freezes it. Also cascades these operations to
-all dependent <code>has_many</code> instances.</p>
+instance as destroyed, and freezes it.</p>
 
 
   </div>
@@ -2275,6 +2274,7 @@ all dependent <code>has_many</code> instances.</p>
       <pre class="lines">
 
 
+223
 224
 225
 226
@@ -2291,11 +2291,10 @@ all dependent <code>has_many</code> instances.</p>
 237
 238
 239
-240
-241</pre>
+240</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/active_medusa/base.rb', line 224</span>
+      <pre class="code"><span class="info file"># File 'lib/active_medusa/base.rb', line 223</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_destroy'>destroy</span><span class='lparen'>(</span><span class='id identifier rubyid_options'>options</span> <span class='op'>=</span> <span class='lbrace'>{</span><span class='rbrace'>}</span><span class='rparen'>)</span>
   <span class='kw'>if</span> <span class='ivar'>@persisted</span> <span class='kw'>and</span> <span class='op'>!</span><span class='ivar'>@destroyed</span>
@@ -2357,12 +2356,12 @@ all dependent <code>has_many</code> instances.</p>
       <pre class="lines">
 
 
+248
 249
-250
-251</pre>
+250</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/active_medusa/base.rb', line 249</span>
+      <pre class="code"><span class="info file"># File 'lib/active_medusa/base.rb', line 248</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_destroyed?'>destroyed?</span>
   <span class='ivar'>@destroyed</span>
@@ -2416,6 +2415,7 @@ all dependent <code>has_many</code> instances.</p>
       <pre class="lines">
 
 
+330
 331
 332
 333
@@ -2425,11 +2425,10 @@ all dependent <code>has_many</code> instances.</p>
 337
 338
 339
-340
-341</pre>
+340</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/active_medusa/base.rb', line 331</span>
+      <pre class="code"><span class="info file"># File 'lib/active_medusa/base.rb', line 330</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_fetch_current_graph'>fetch_current_graph</span>
   <span class='id identifier rubyid_url'>url</span> <span class='op'>=</span> <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_repository_metadata_url'>repository_metadata_url</span> <span class='comment'># already transactionalized
@@ -2484,16 +2483,16 @@ all dependent <code>has_many</code> instances.</p>
       <pre class="lines">
 
 
+345
 346
 347
 348
 349
 350
-351
-352</pre>
+351</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/active_medusa/base.rb', line 346</span>
+      <pre class="code"><span class="info file"># File 'lib/active_medusa/base.rb', line 345</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_new_rdf_graph'>new_rdf_graph</span>
   <span class='id identifier rubyid_graph'>graph</span> <span class='op'>=</span> <span class='const'>RDF</span><span class='op'>::</span><span class='const'>Graph</span><span class='period'>.</span><span class='id identifier rubyid_new'>new</span>
@@ -2544,12 +2543,12 @@ all dependent <code>has_many</code> instances.</p>
       <pre class="lines">
 
 
+255
 256
-257
-258</pre>
+257</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/active_medusa/base.rb', line 256</span>
+      <pre class="code"><span class="info file"># File 'lib/active_medusa/base.rb', line 255</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_persisted?'>persisted?</span>
   <span class='ivar'>@persisted</span> <span class='kw'>and</span> <span class='op'>!</span><span class='ivar'>@destroyed</span>
@@ -2618,6 +2617,7 @@ all dependent <code>has_many</code> instances.</p>
       <pre class="lines">
 
 
+359
 360
 361
 362
@@ -2651,11 +2651,10 @@ all dependent <code>has_many</code> instances.</p>
 390
 391
 392
-393
-394</pre>
+393</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/active_medusa/base.rb', line 360</span>
+      <pre class="code"><span class="info file"># File 'lib/active_medusa/base.rb', line 359</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_populate_outgoing_graph'>populate_outgoing_graph</span><span class='lparen'>(</span><span class='id identifier rubyid_graph'>graph</span><span class='rparen'>)</span>
   <span class='comment'># add properties from subclass property definitions
@@ -2738,6 +2737,7 @@ all dependent <code>has_many</code> instances.</p>
       <pre class="lines">
 
 
+400
 401
 402
 403
@@ -2761,11 +2761,10 @@ all dependent <code>has_many</code> instances.</p>
 421
 422
 423
-424
-425</pre>
+424</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/active_medusa/base.rb', line 401</span>
+      <pre class="code"><span class="info file"># File 'lib/active_medusa/base.rb', line 400</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_populate_self_from_graph'>populate_self_from_graph</span><span class='lparen'>(</span><span class='id identifier rubyid_graph'>graph</span><span class='rparen'>)</span>
   <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_rdf_graph'>rdf_graph</span> <span class='op'>=</span> <span class='id identifier rubyid_graph'>graph</span>
@@ -2812,12 +2811,12 @@ all dependent <code>has_many</code> instances.</p>
       <pre class="lines">
 
 
+259
 260
-261
-262</pre>
+261</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/active_medusa/base.rb', line 260</span>
+      <pre class="code"><span class="info file"># File 'lib/active_medusa/base.rb', line 259</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_reload!'>reload!</span>
   <span class='id identifier rubyid_populate_self_from_graph'>populate_self_from_graph</span><span class='lparen'>(</span><span class='id identifier rubyid_fetch_current_graph'>fetch_current_graph</span><span class='rparen'>)</span>
@@ -2881,6 +2880,7 @@ all dependent <code>has_many</code> instances.</p>
       <pre class="lines">
 
 
+271
 272
 273
 274
@@ -2893,11 +2893,10 @@ all dependent <code>has_many</code> instances.</p>
 281
 282
 283
-284
-285</pre>
+284</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/active_medusa/base.rb', line 272</span>
+      <pre class="code"><span class="info file"># File 'lib/active_medusa/base.rb', line 271</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_save'>save</span>
   <span class='id identifier rubyid_raise'>raise</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>Cannot save a destroyed object.</span><span class='tstring_end'>&#39;</span></span> <span class='kw'>if</span> <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_destroyed?'>destroyed?</span>
@@ -2966,6 +2965,7 @@ all dependent <code>has_many</code> instances.</p>
       <pre class="lines">
 
 
+432
 433
 434
 435
@@ -2974,11 +2974,10 @@ all dependent <code>has_many</code> instances.</p>
 438
 439
 440
-441
-442</pre>
+441</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/active_medusa/base.rb', line 433</span>
+      <pre class="code"><span class="info file"># File 'lib/active_medusa/base.rb', line 432</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_save_existing'>save_existing</span>
   <span class='id identifier rubyid_run_callbacks'>run_callbacks</span> <span class='symbol'>:update</span> <span class='kw'>do</span>
@@ -3034,12 +3033,12 @@ all dependent <code>has_many</code> instances.</p>
       <pre class="lines">
 
 
+448
 449
-450
-451</pre>
+450</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/active_medusa/base.rb', line 449</span>
+      <pre class="code"><span class="info file"># File 'lib/active_medusa/base.rb', line 448</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_save_new'>save_new</span>
   <span class='id identifier rubyid_raise'>raise</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>Subclasses must override save_new()</span><span class='tstring_end'>&#39;</span></span>
@@ -3110,15 +3109,15 @@ all dependent <code>has_many</code> instances.</p>
       <pre class="lines">
 
 
+293
 294
 295
 296
 297
-298
-299</pre>
+298</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/active_medusa/base.rb', line 294</span>
+      <pre class="code"><span class="info file"># File 'lib/active_medusa/base.rb', line 293</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_update'>update</span><span class='lparen'>(</span><span class='id identifier rubyid_params'>params</span><span class='rparen'>)</span>
   <span class='id identifier rubyid_params'>params</span><span class='period'>.</span><span class='id identifier rubyid_except'>except</span><span class='lparen'>(</span><span class='op'>*</span><span class='const'>REJECT_PARAMS</span><span class='rparen'>)</span><span class='period'>.</span><span class='id identifier rubyid_each'>each</span> <span class='kw'>do</span> <span class='op'>|</span><span class='id identifier rubyid_k'>k</span><span class='comma'>,</span> <span class='id identifier rubyid_v'>v</span><span class='op'>|</span>
@@ -3192,15 +3191,15 @@ all dependent <code>has_many</code> instances.</p>
       <pre class="lines">
 
 
+305
 306
 307
 308
 309
-310
-311</pre>
+310</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/active_medusa/base.rb', line 306</span>
+      <pre class="code"><span class="info file"># File 'lib/active_medusa/base.rb', line 305</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_update!'>update!</span><span class='lparen'>(</span><span class='id identifier rubyid_params'>params</span><span class='rparen'>)</span>
   <span class='id identifier rubyid_params'>params</span><span class='period'>.</span><span class='id identifier rubyid_except'>except</span><span class='lparen'>(</span><span class='op'>*</span><span class='const'>REJECT_PARAMS</span><span class='rparen'>)</span><span class='period'>.</span><span class='id identifier rubyid_each'>each</span> <span class='kw'>do</span> <span class='op'>|</span><span class='id identifier rubyid_k'>k</span><span class='comma'>,</span> <span class='id identifier rubyid_v'>v</span><span class='op'>|</span>
@@ -3250,6 +3249,7 @@ all dependent <code>has_many</code> instances.</p>
       <pre class="lines">
 
 
+315
 316
 317
 318
@@ -3257,11 +3257,10 @@ all dependent <code>has_many</code> instances.</p>
 320
 321
 322
-323
-324</pre>
+323</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/active_medusa/base.rb', line 316</span>
+      <pre class="code"><span class="info file"># File 'lib/active_medusa/base.rb', line 315</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_updated_at'>updated_at</span>
   <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_rdf_graph'>rdf_graph</span><span class='period'>.</span><span class='id identifier rubyid_each_statement'>each_statement</span> <span class='kw'>do</span> <span class='op'>|</span><span class='id identifier rubyid_statement'>statement</span><span class='op'>|</span>
@@ -3282,9 +3281,9 @@ all dependent <code>has_many</code> instances.</p>
 </div>
 
     <div id="footer">
-  Generated on Tue Jul 14 11:35:42 2015 by
+  Generated on Fri Aug 21 12:19:20 2015 by
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
-  0.8.7.6 (ruby-2.1.1).
+  0.8.7.6 (ruby-2.2.2).
 </div>
 
   </body>

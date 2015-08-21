@@ -102,8 +102,8 @@
 <h2>Overview</h2><div class="docstring">
   <div class="discussion">
     
-<p>Singleton ActiveMedusa configuration class. See the readme for an example
-of correct initialization.</p>
+<p>Singleton configuration class. See the readme for an example of correct
+initialization.</p>
 
 
   </div>
@@ -151,7 +151,7 @@ of correct initialization.</p>
 
   
     <span class="summary_desc"><div class='inline'>
-<p><code>/mlt</code>.</p>
+<p>RDF predicate to use to store entity type.</p>
 </div></span>
   
 </li>
@@ -178,7 +178,7 @@ of correct initialization.</p>
 
   
     <span class="summary_desc"><div class='inline'>
-<p><code>/rest</code>.</p>
+<p>Base URL of the Fedora REST API, typically ending in <code>/rest</code>.</p>
 </div></span>
   
 </li>
@@ -205,7 +205,7 @@ of correct initialization.</p>
 
   
     <span class="summary_desc"><div class='inline'>
-<p>be <code>Rails.logger</code>.</p>
+<p>The logger to use.</p>
 </div></span>
   
 </li>
@@ -268,7 +268,7 @@ of correct initialization.</p>
       <li class="public ">
   <span class="summary_signature">
     
-      <a href="#solr_default_search_field-instance_method" title="#solr_default_search_field (instance method)">- (Object) <strong>solr_default_search_field</strong> </a>
+      <a href="#solr_default_facetable_fields-instance_method" title="#solr_default_facetable_fields (instance method)">- (Array) <strong>solr_default_facetable_fields</strong> </a>
     
 
     
@@ -286,7 +286,7 @@ of correct initialization.</p>
 
   
     <span class="summary_desc"><div class='inline'>
-<p>Returns the value of attribute solr_default_search_field.</p>
+<p>Array of facetable fields.</p>
 </div></span>
   
 </li>
@@ -295,7 +295,7 @@ of correct initialization.</p>
       <li class="public ">
   <span class="summary_signature">
     
-      <a href="#solr_facet_fields-instance_method" title="#solr_facet_fields (instance method)">- (Object) <strong>solr_facet_fields</strong> </a>
+      <a href="#solr_default_search_field-instance_method" title="#solr_default_search_field (instance method)">- (String) <strong>solr_default_search_field</strong> </a>
     
 
     
@@ -313,7 +313,7 @@ of correct initialization.</p>
 
   
     <span class="summary_desc"><div class='inline'>
-<p>Returns the value of attribute solr_facet_fields.</p>
+<p>Name of the Solr field to search on by default.</p>
 </div></span>
   
 </li>
@@ -322,7 +322,7 @@ of correct initialization.</p>
       <li class="public ">
   <span class="summary_signature">
     
-      <a href="#solr_more_like_this_endpoint-instance_method" title="#solr_more_like_this_endpoint (instance method)">- (Object) <strong>solr_more_like_this_endpoint</strong> </a>
+      <a href="#solr_more_like_this_endpoint-instance_method" title="#solr_more_like_this_endpoint (instance method)">- (String) <strong>solr_more_like_this_endpoint</strong> </a>
     
 
     
@@ -340,7 +340,34 @@ of correct initialization.</p>
 
   
     <span class="summary_desc"><div class='inline'>
-<p>Returns the value of attribute solr_more_like_this_endpoint.</p>
+<p>Path of the “MoreLikeThis” endpoint.</p>
+</div></span>
+  
+</li>
+
+    
+      <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#solr_parent_uri_field-instance_method" title="#solr_parent_uri_field (instance method)">- (String) <strong>solr_parent_uri_field</strong> </a>
+    
+
+    
+  </span>
+  
+  
+  
+    
+    
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'>
+<p>Name of the Solr field that stores the node&#39;s parent URI.</p>
 </div></span>
   
 </li>
@@ -367,7 +394,7 @@ of correct initialization.</p>
 
   
     <span class="summary_desc"><div class='inline'>
-<p>URL/URI.</p>
+<p>Name of the Solr field that stores the repository URL/URI.</p>
 </div></span>
   
 </li>
@@ -394,7 +421,7 @@ of correct initialization.</p>
 
   
     <span class="summary_desc"><div class='inline'>
-<p>Base URL of the Solr server.</p>
+<p>Base URL of the Solr server, excluding the path to the core.</p>
 </div></span>
   
 </li>
@@ -403,7 +430,7 @@ of correct initialization.</p>
       <li class="public ">
   <span class="summary_signature">
     
-      <a href="#solr_uuid_field-instance_method" title="#solr_uuid_field (instance method)">- (Object) <strong>solr_uuid_field</strong> </a>
+      <a href="#solr_uuid_field-instance_method" title="#solr_uuid_field (instance method)">- (String) <strong>solr_uuid_field</strong> </a>
     
 
     
@@ -421,7 +448,7 @@ of correct initialization.</p>
 
   
     <span class="summary_desc"><div class='inline'>
-<p>Returns the value of attribute solr_uuid_field.</p>
+<p>Name of the Solr field that stores the repository UUID.</p>
 </div></span>
   
 </li>
@@ -564,19 +591,21 @@ of correct initialization.</p>
       <pre class="lines">
 
 
-76
-77
-78
-79
-80
-81</pre>
+95
+96
+97
+98
+99
+100
+101</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/active_medusa/configuration.rb', line 76</span>
+      <pre class="code"><span class="info file"># File 'lib/active_medusa/configuration.rb', line 95</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_initialize'>initialize</span>
-  <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_solr_uri_field'>solr_uri_field</span> <span class='op'>=</span> <span class='symbol'>:id</span>
-  <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_solr_more_like_this_endpoint'>solr_more_like_this_endpoint</span> <span class='op'>=</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>/mlt</span><span class='tstring_end'>&#39;</span></span>
+  <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_logger'>logger</span> <span class='op'>=</span> <span class='const'>Logger</span><span class='period'>.</span><span class='id identifier rubyid_new'>new</span><span class='lparen'>(</span><span class='const'>STDOUT</span><span class='rparen'>)</span>
+  <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_solr_uri_field'>solr_uri_field</span> <span class='op'>=</span> <span class='symbol'>:id</span> <span class='comment'># TODO: remove this
+</span>  <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_solr_more_like_this_endpoint'>solr_more_like_this_endpoint</span> <span class='op'>=</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>/mlt</span><span class='tstring_end'>&#39;</span></span>
   <span class='kw'>yield</span> <span class='kw'>self</span>
   <span class='cvar'>@@instance</span> <span class='op'>=</span> <span class='kw'>self</span>
 <span class='kw'>end</span></pre>
@@ -604,7 +633,7 @@ of correct initialization.</p>
 </h3><div class="docstring">
   <div class="discussion">
     
-<p><code>/mlt</code>.</p>
+<p>Returns RDF predicate to use to store entity type.</p>
 
 
   </div>
@@ -623,7 +652,7 @@ of correct initialization.</p>
       
         &mdash;
         <div class='inline'>
-<p>Path of the “MoreLikeThis” endpoint. Defaults to</p>
+<p>RDF predicate to use to store entity type.</p>
 </div>
       
     </li>
@@ -636,12 +665,12 @@ of correct initialization.</p>
       <pre class="lines">
 
 
-29
 30
-31</pre>
+31
+32</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/active_medusa/configuration.rb', line 29</span>
+      <pre class="code"><span class="info file"># File 'lib/active_medusa/configuration.rb', line 30</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_class_predicate'>class_predicate</span>
   <span class='ivar'>@class_predicate</span>
@@ -665,7 +694,8 @@ of correct initialization.</p>
 </h3><div class="docstring">
   <div class="discussion">
     
-<p><code>/rest</code>.</p>
+<p>Returns Base URL of the Fedora REST API, typically ending in
+<code>/rest</code>.</p>
 
 
   </div>
@@ -684,7 +714,7 @@ of correct initialization.</p>
       
         &mdash;
         <div class='inline'>
-<p>Base URL of the Fedora server, typically ending in</p>
+<p>Base URL of the Fedora REST API, typically ending in <code>/rest</code>.</p>
 </div>
       
     </li>
@@ -726,7 +756,9 @@ of correct initialization.</p>
 </h3><div class="docstring">
   <div class="discussion">
     
-<p>be <code>Rails.logger</code>.</p>
+<p>Returns The logger to use. In a Rails app, this will probably be
+<code>Rails.logger</code>. If not set, an instance of Logger will log to
+stdout.</p>
 
 
   </div>
@@ -745,7 +777,9 @@ of correct initialization.</p>
       
         &mdash;
         <div class='inline'>
-<p>The logger to use. In a Rails app, this will probably</p>
+<p>The logger to use. In a Rails app, this will probably be
+<code>Rails.logger</code>. If not set, an instance of Logger will log to
+stdout.</p>
 </div>
       
     </li>
@@ -758,12 +792,12 @@ of correct initialization.</p>
       <pre class="lines">
 
 
-23
 24
-25</pre>
+25
+26</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/active_medusa/configuration.rb', line 23</span>
+      <pre class="code"><span class="info file"># File 'lib/active_medusa/configuration.rb', line 24</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_logger'>logger</span>
   <span class='ivar'>@logger</span>
@@ -819,12 +853,12 @@ of correct initialization.</p>
       <pre class="lines">
 
 
-41
 42
-43</pre>
+43
+44</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/active_medusa/configuration.rb', line 41</span>
+      <pre class="code"><span class="info file"># File 'lib/active_medusa/configuration.rb', line 42</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_solr_class_field'>solr_class_field</span>
   <span class='ivar'>@solr_class_field</span>
@@ -880,15 +914,78 @@ of correct initialization.</p>
       <pre class="lines">
 
 
-35
 36
-37</pre>
+37
+38</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/active_medusa/configuration.rb', line 35</span>
+      <pre class="code"><span class="info file"># File 'lib/active_medusa/configuration.rb', line 36</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_solr_core'>solr_core</span>
   <span class='ivar'>@solr_core</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      
+      <span id="solr_default_facetable_fields=-instance_method"></span>
+      <div class="method_details ">
+  <h3 class="signature " id="solr_default_facetable_fields-instance_method">
+  
+    - (<tt>Array</tt>) <strong>solr_default_facetable_fields</strong> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    
+<p>Returns Array of facetable fields. Can be overridden by
+<code>ActiveMedusa::Relation.facetable_fields</code>.</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+<p class="tag_title">Returns:</p>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt>Array</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'>
+<p>Array of facetable fields. Can be overridden by
+<code>ActiveMedusa::Relation.facetable_fields</code>.</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+79
+80
+81</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/active_medusa/configuration.rb', line 79</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_solr_default_facetable_fields'>solr_default_facetable_fields</span>
+  <span class='ivar'>@solr_default_facetable_fields</span>
 <span class='kw'>end</span></pre>
     </td>
   </tr>
@@ -900,7 +997,7 @@ of correct initialization.</p>
       <div class="method_details ">
   <h3 class="signature " id="solr_default_search_field-instance_method">
   
-    - (<tt>Object</tt>) <strong>solr_default_search_field</strong> 
+    - (<tt>String</tt>) <strong>solr_default_search_field</strong> 
   
 
   
@@ -909,13 +1006,31 @@ of correct initialization.</p>
 </h3><div class="docstring">
   <div class="discussion">
     
-<p>Returns the value of attribute solr_default_search_field</p>
+<p>Returns Name of the Solr field to search on by default.</p>
 
 
   </div>
 </div>
 <div class="tags">
   
+<p class="tag_title">Returns:</p>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt>String</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'>
+<p>Name of the Solr field to search on by default.</p>
+</div>
+      
+    </li>
+  
+</ul>
 
 </div><table class="source_code">
   <tr>
@@ -923,58 +1038,15 @@ of correct initialization.</p>
       <pre class="lines">
 
 
-59
-60
-61</pre>
+72
+73
+74</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/active_medusa/configuration.rb', line 59</span>
+      <pre class="code"><span class="info file"># File 'lib/active_medusa/configuration.rb', line 72</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_solr_default_search_field'>solr_default_search_field</span>
   <span class='ivar'>@solr_default_search_field</span>
-<span class='kw'>end</span></pre>
-    </td>
-  </tr>
-</table>
-</div>
-    
-      
-      <span id="solr_facet_fields=-instance_method"></span>
-      <div class="method_details ">
-  <h3 class="signature " id="solr_facet_fields-instance_method">
-  
-    - (<tt>Object</tt>) <strong>solr_facet_fields</strong> 
-  
-
-  
-
-  
-</h3><div class="docstring">
-  <div class="discussion">
-    
-<p>Returns the value of attribute solr_facet_fields</p>
-
-
-  </div>
-</div>
-<div class="tags">
-  
-
-</div><table class="source_code">
-  <tr>
-    <td>
-      <pre class="lines">
-
-
-61
-62
-63</pre>
-    </td>
-    <td>
-      <pre class="code"><span class="info file"># File 'lib/active_medusa/configuration.rb', line 61</span>
-
-<span class='kw'>def</span> <span class='id identifier rubyid_solr_facet_fields'>solr_facet_fields</span>
-  <span class='ivar'>@solr_facet_fields</span>
 <span class='kw'>end</span></pre>
     </td>
   </tr>
@@ -986,7 +1058,7 @@ of correct initialization.</p>
       <div class="method_details ">
   <h3 class="signature " id="solr_more_like_this_endpoint-instance_method">
   
-    - (<tt>Object</tt>) <strong>solr_more_like_this_endpoint</strong> 
+    - (<tt>String</tt>) <strong>solr_more_like_this_endpoint</strong> 
   
 
   
@@ -995,13 +1067,36 @@ of correct initialization.</p>
 </h3><div class="docstring">
   <div class="discussion">
     
-<p>Returns the value of attribute solr_more_like_this_endpoint</p>
+<p>Returns Path of the “MoreLikeThis” endpoint. Defaults to <code>/mlt</code>.
+(See <a
+href="https://wiki.apache.org/solr/MoreLikeThis">wiki.apache.org/solr/MoreLikeThis</a>
+for more information.)</p>
 
 
   </div>
 </div>
 <div class="tags">
   
+<p class="tag_title">Returns:</p>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt>String</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'>
+<p>Path of the “MoreLikeThis” endpoint. Defaults to <code>/mlt</code>. (See <a
+href="https://wiki.apache.org/solr/MoreLikeThis">wiki.apache.org/solr/MoreLikeThis</a>
+for more information.)</p>
+</div>
+      
+    </li>
+  
+</ul>
 
 </div><table class="source_code">
   <tr>
@@ -1009,15 +1104,76 @@ of correct initialization.</p>
       <pre class="lines">
 
 
-55
 56
-57</pre>
+57
+58</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/active_medusa/configuration.rb', line 55</span>
+      <pre class="code"><span class="info file"># File 'lib/active_medusa/configuration.rb', line 56</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_solr_more_like_this_endpoint'>solr_more_like_this_endpoint</span>
   <span class='ivar'>@solr_more_like_this_endpoint</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      
+      <span id="solr_parent_uri_field=-instance_method"></span>
+      <div class="method_details ">
+  <h3 class="signature " id="solr_parent_uri_field-instance_method">
+  
+    - (<tt>String</tt>) <strong>solr_parent_uri_field</strong> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    
+<p>Returns Name of the Solr field that stores the node&#39;s parent URI.</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+<p class="tag_title">Returns:</p>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt>String</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'>
+<p>Name of the Solr field that stores the node&#39;s parent URI.</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+62
+63
+64</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/active_medusa/configuration.rb', line 62</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_solr_parent_uri_field'>solr_parent_uri_field</span>
+  <span class='ivar'>@solr_parent_uri_field</span>
 <span class='kw'>end</span></pre>
     </td>
   </tr>
@@ -1038,7 +1194,7 @@ of correct initialization.</p>
 </h3><div class="docstring">
   <div class="discussion">
     
-<p>URL/URI.</p>
+<p>Returns Name of the Solr field that stores the repository URL/URI.</p>
 
 
   </div>
@@ -1057,7 +1213,7 @@ of correct initialization.</p>
       
         &mdash;
         <div class='inline'>
-<p>Name of the Solr field that stores the repository</p>
+<p>Name of the Solr field that stores the repository URL/URI.</p>
 </div>
       
     </li>
@@ -1070,12 +1226,12 @@ of correct initialization.</p>
       <pre class="lines">
 
 
-48
 49
-50</pre>
+50
+51</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/active_medusa/configuration.rb', line 48</span>
+      <pre class="code"><span class="info file"># File 'lib/active_medusa/configuration.rb', line 49</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_solr_uri_field'>solr_uri_field</span>
   <span class='ivar'>@solr_uri_field</span>
@@ -1099,7 +1255,7 @@ of correct initialization.</p>
 </h3><div class="docstring">
   <div class="discussion">
     
-<p>Returns Base URL of the Solr server.</p>
+<p>Returns Base URL of the Solr server, excluding the path to the core.</p>
 
 
   </div>
@@ -1118,7 +1274,68 @@ of correct initialization.</p>
       
         &mdash;
         <div class='inline'>
-<p>Base URL of the Solr server.</p>
+<p>Base URL of the Solr server, excluding the path to the core.</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+86
+87
+88</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/active_medusa/configuration.rb', line 86</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_solr_url'>solr_url</span>
+  <span class='ivar'>@solr_url</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      
+      <span id="solr_uuid_field=-instance_method"></span>
+      <div class="method_details ">
+  <h3 class="signature " id="solr_uuid_field-instance_method">
+  
+    - (<tt>String</tt>) <strong>solr_uuid_field</strong> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    
+<p>Returns Name of the Solr field that stores the repository UUID.</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+<p class="tag_title">Returns:</p>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt>String</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'>
+<p>Name of the Solr field that stores the repository UUID.</p>
 </div>
       
     </li>
@@ -1137,49 +1354,6 @@ of correct initialization.</p>
     </td>
     <td>
       <pre class="code"><span class="info file"># File 'lib/active_medusa/configuration.rb', line 67</span>
-
-<span class='kw'>def</span> <span class='id identifier rubyid_solr_url'>solr_url</span>
-  <span class='ivar'>@solr_url</span>
-<span class='kw'>end</span></pre>
-    </td>
-  </tr>
-</table>
-</div>
-    
-      
-      <span id="solr_uuid_field=-instance_method"></span>
-      <div class="method_details ">
-  <h3 class="signature " id="solr_uuid_field-instance_method">
-  
-    - (<tt>Object</tt>) <strong>solr_uuid_field</strong> 
-  
-
-  
-
-  
-</h3><div class="docstring">
-  <div class="discussion">
-    
-<p>Returns the value of attribute solr_uuid_field</p>
-
-
-  </div>
-</div>
-<div class="tags">
-  
-
-</div><table class="source_code">
-  <tr>
-    <td>
-      <pre class="lines">
-
-
-57
-58
-59</pre>
-    </td>
-    <td>
-      <pre class="code"><span class="info file"># File 'lib/active_medusa/configuration.rb', line 57</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_solr_uuid_field'>solr_uuid_field</span>
   <span class='ivar'>@solr_uuid_field</span>
@@ -1240,12 +1414,12 @@ of correct initialization.</p>
       <pre class="lines">
 
 
-72
-73
-74</pre>
+91
+92
+93</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/active_medusa/configuration.rb', line 72</span>
+      <pre class="code"><span class="info file"># File 'lib/active_medusa/configuration.rb', line 91</span>
 
 <span class='kw'>def</span> <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_instance'>instance</span>
   <span class='cvar'>@@instance</span>
@@ -1260,9 +1434,9 @@ of correct initialization.</p>
 </div>
 
     <div id="footer">
-  Generated on Tue Jul 14 11:35:43 2015 by
+  Generated on Fri Aug 21 12:19:22 2015 by
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
-  0.8.7.6 (ruby-2.1.1).
+  0.8.7.6 (ruby-2.2.2).
 </div>
 
   </body>
