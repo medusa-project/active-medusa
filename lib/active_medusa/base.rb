@@ -36,8 +36,6 @@ module ActiveMedusa
     # @!attribute id
     #   @return [String] The instance's repository ID.
     attr_accessor :id
-    alias_method :repository_url, :id
-    alias_method :repository_url=, :id=
 
     # @!attribute parent_url
     #   @return [String] The URL of the entity's parent container.
@@ -47,6 +45,9 @@ module ActiveMedusa
     #   @return [RDF::Graph] RDF graph containing the instance's repository
     #           properties.
     attr_accessor :rdf_graph
+
+    alias_method :repository_url, :id
+    alias_method :repository_url=, :id=
 
     # @!attribute requested_slug
     #   @return [String] The requested Fedora URI last path component for new

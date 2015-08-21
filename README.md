@@ -34,8 +34,7 @@ using Solr for lookup and querying.
 # Requirements
 
 * Ruby 2.x
-* Fedora 4.1.1 or 4.2 (earlier 4.x versions may work but are untested; 4.3 does
-  **not** work yet due to the elimination of `fedora:uuid`)
+* Fedora 4.1.1 or greater
 
 # Installation
 
@@ -79,6 +78,20 @@ Then execute:
 2. Decide whether you want to use the new `ActiveMedusa::Indexable` module
    (see below).
 
+## 1.1.0 to 2.0.0
+
+1. Remove `config.solr_uuid_field` from your `ActiveMedusa::Configuration`
+   initializer.
+2. Rename `config.solr_uri_field` to `solr_id_field` in your
+   `ActiveMedusa::Configuration` initializer.
+3. Remove any calls to `ActiveMedusa::Querying.find_by_uuid`.
+4. Remove any calls to `ActiveMedusa::Base.uuid`.
+5. Take into account that `ActiveMedusa::Querying.find` now finds by repository
+   node URI instead of UUID.
+6. Be aware that `ActiveMedusa::Base.repository_url` is now an alias of
+   `id`.
+7. Reindex.
+
 # Usage
 
 ## Initializing
@@ -96,11 +109,8 @@ ActiveMedusa::Configuration.new do |config|
   config.solr_core = 'collection1'
   config.solr_more_like_this_endpoint = '/mlt'
   config.solr_class_field = :class_s
-  config.solr_created_field = :created_dts
-  config.solr_last_modified_field = :last_modified_dts
   config.solr_id_field = :id
   config.solr_parent_uri_field = :parent_uri_s
-  config.solr_uuid_field = :uuid_s
   config.solr_default_search_field = :searchall_txt
   config.solr_default_facetable_fields = [
       :collection_facet, :creator_facet, :date_facet, :format_facet,
@@ -360,19 +370,15 @@ committed. ActiveMedusa will not commit it automatically.*
 *Note: Newly created entities cannot be loaded until the Solr index has been
 committed. ActiveMedusa will not commit it automatically.*
 
-### By UUID
+### By Repository URI
+
+ActiveMedusa uses the node repository URI as the entity ID since version 2.0.0.
 
 ```ruby
-item = Item.find('some UUID')
+item = Item.find('http://localhost:8080/fcrepo/rest/kumquats')
 ```
 
 This is the only finder method that will raise an error if nothing is found.
-
-### By Repository URI
-
-```ruby
-item = Item.find_by_uri('http://localhost:8080/fcrepo/rest/kumquats')
-```
 
 ### By Property
 
@@ -422,16 +428,6 @@ item.rdf_graph << [nil, RDF::URI('http://purl.org/dc/elements/1.1/title'),
 ```
 
 You would then need to call `item.save` to persist this change.
-
-### Other Useful Entity Methods
-
-* `id`/`uuid` (returns the node's UUID)
-* `created_at` (returns the RDF object of `fedora:created` as a `Time` object)
-* `updated_at` (returns the RDF object of `fedora:lastModified` as a `Time`
-  object)
-* `repository_url` (returns the node's repository URI/URL)
-* `destroyed?`
-* `persisted?`
 
 ## Node Hierarchy Traversal
 
@@ -684,6 +680,17 @@ end
 ActiveMedusa uses [semantic versioning](http://semver.org).
 
 # Version History
+
+## 2.0.0
+
+* Removed `ActiveMedusa::Configuration.solr_uuid_field`.
+* Renamed `ActiveMedusa::Configuration.solr_uri_field` to `solr_id_field`.
+* Made `ActiveMedusa::Querying.find_by_uri` an alias of `find`.
+* Removed `ActiveMedusa::Querying.find_by_uuid`.
+* Removed `ActiveMedusa::Base.uuid`.
+* Made `ActiveMedusa::Base.repository_url` an alias of `id`.
+* ActiveMedusa is now UUID-agnostic.
+* ActiveMedusa now works with Fedora 4.3.
 
 ## 1.1.0
 
