@@ -64,10 +64,11 @@ module ActiveMedusa
 
       # add fields corresponding to associations
       self.class.associations.
-          select{ |a| a.class == self.class and
+          select{ |a| a.source_class == self.class and
           a.type == Association::Type::BELONGS_TO }.each do |assoc|
         obj = self.send(assoc.name)
-        doc[assoc.solr_field] = obj.repository_url if obj.kind_of?(Base)
+        doc[assoc.solr_field] = obj.repository_url if
+            obj.respond_to?(:repository_url)
       end
 
       doc
