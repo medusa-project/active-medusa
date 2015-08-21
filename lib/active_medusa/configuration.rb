@@ -89,7 +89,6 @@ module ActiveMedusa
 
     def initialize
       self.logger = Logger.new(STDOUT)
-      self.solr_uri_field = :id # TODO: remove this
       self.solr_more_like_this_endpoint = '/mlt'
       yield self
       @@instance = self
