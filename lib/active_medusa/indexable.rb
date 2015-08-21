@@ -50,7 +50,6 @@ module ActiveMedusa
 
       # add fields required by activemedusa
       doc = {
-          config.solr_uuid_field => self.uuid,
           config.solr_id_field => self.id,
           config.solr_class_field => self.class.entity_class_uri,
           config.solr_parent_uri_field =>

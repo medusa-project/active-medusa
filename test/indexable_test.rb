@@ -47,7 +47,6 @@ class IndexableTest < Minitest::Test
     item = Item.all.first
     doc = item.solr_document
     # test presence of fields required by activemedusa
-    assert_equal item.uuid, doc[@config.solr_uuid_field]
     assert_equal item.id, doc[@config.solr_id_field]
     assert_equal item.class.entity_class_uri, doc[@config.solr_class_field]
     assert_equal item.rdf_graph.any_object('http://fedora.info/definitions/v4/repository#hasParent').to_s,

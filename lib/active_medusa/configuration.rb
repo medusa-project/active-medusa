@@ -61,11 +61,6 @@ module ActiveMedusa
     #
     attr_accessor :solr_parent_uri_field
 
-    # @!attribute solr_uuid_field
-    #   @return [String] Name of the Solr field that stores the repository UUID.
-    #
-    attr_accessor :solr_uuid_field
-
     # @!attribute solr_default_search_field
     #   @return [String] Name of the Solr field to search on by default.
     #
