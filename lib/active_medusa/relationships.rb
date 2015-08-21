@@ -54,7 +54,8 @@ module ActiveMedusa
         self_ = self
         self.class.instance_eval do
           @@associations << ActiveMedusa::Association.new(
-              options.merge(source_class: self_,
+              options.merge(name: options[:name] || entity,
+                            source_class: self_,
                             type: ActiveMedusa::Association::Type::BELONGS_TO,
                             target_class: entity_class))
         end
