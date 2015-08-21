@@ -72,7 +72,7 @@ Then execute:
 
 # Upgrading
 
-## 1.0 to 1.1
+## 1.0.0 to 1.1.0
 
 1. Add `config.solr_parent_uri_field` to your `ActiveMedusa::Configuration`
    initializer.
@@ -685,14 +685,14 @@ ActiveMedusa uses [semantic versioning](http://semver.org).
 
 # Version History
 
-## 1.1
+## 1.1.0
 
 * Added optional automatic Solr indexing via `ActiveMedusa::Indexable`
 * Added `ActiveMedusa::Configuration.solr_parent_uri_field`
 * Documentation improvements
 * Log to stdout by default
 
-## 1.0
+## 1.0.0
 
 * First release.
 
