@@ -54,7 +54,7 @@ class BaseTest < Minitest::Test
   end
 
   def test_load_with_nonexistent_node
-    assert_raises HTTPClient::BadResponseError do
+    assert_raises ActiveMedusa::RepositoryError do
       ActiveMedusa::Base.load(@config.fedora_url + '/blablabla')
     end
   end

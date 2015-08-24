@@ -252,11 +252,12 @@ module ActiveMedusa
             entity = ActiveMedusa::Base.load(doc['id'])
             entity.score = doc['score']
             @results << entity
-          rescue HTTPClient::BadResponseError => e
-            # This probably means that the item was deleted from the
-            # repository and the delete did not propagate to Solr for some
-            # reason. There is nothing we can do, so swallow it and log it
-            # to avoid disrupting the user experience.
+          rescue RepositoryError => e
+            # This means that an item in the Solr index does not exist in the
+            # repository; perhaps it was deleted from the repository and the
+            # delete did not propagate to Solr, but whatever the reason, there
+            # is nothing we can do except swallow it and log it to avoid
+            # disrupting the user experience.
             Configuration.instance.logger.
                 error("Item present in Solr result is missing from "\
                 "repository: #{e.message}")

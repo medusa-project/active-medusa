@@ -90,7 +90,9 @@ Then execute:
    node URI instead of UUID.
 6. Be aware that `ActiveMedusa::Base.repository_url` is now an alias of
    `id`.
-7. Reindex.
+7. Replace any handling of `HTTPClient::BadResponseError` with handling of
+   `ActiveMedusa::RepositoryError`.
+8. Reindex.
 
 # Usage
 
@@ -689,7 +691,9 @@ ActiveMedusa uses [semantic versioning](http://semver.org).
 * Removed `ActiveMedusa::Querying.find_by_uuid`.
 * Removed `ActiveMedusa::Base.uuid`.
 * Made `ActiveMedusa::Base.repository_url` an alias of `id`.
-* ActiveMedusa is now UUID-agnostic.
+* `ActiveMedusa::RepositoryError` is raised wherever an
+  `HTTPClient::BadResponseError` would have been leaked.
+* ActiveMedusa no longer has anything to do with UUIDs.
 * ActiveMedusa now works with Fedora 4.3.
 
 ## 1.1.0

@@ -107,34 +107,38 @@ module ActiveMedusa
     ##
     # @param repository_url [String]
     # @return [ActiveMedusa::Base] `ActiveMedusa::Base` subclass
-    # @raise [RuntimeError, RDF::ReaderError]
+    # @raise [ActiveMedusa::RepositoryError, RuntimeError, RDF::ReaderError]
     #
     def self.load(repository_url)
       # find the class to instantiate
-      f4_response = Fedora.client.get(
-          repository_url.chomp('/') + '/fcr:metadata', nil,
-          { 'Accept' => 'application/n-triples' })
-      graph = RDF::Graph.new
-      graph.from_ntriples(f4_response.body)
-      predicate = nil
-      graph.each_statement do |st|
-        if st.predicate.to_s == Configuration.instance.class_predicate.to_s
-          predicate = st.object.to_s
-          break
+      begin
+        f4_response = Fedora.client.get(
+            repository_url.chomp('/') + '/fcr:metadata', nil,
+            { 'Accept' => 'application/n-triples' })
+        graph = RDF::Graph.new
+        graph.from_ntriples(f4_response.body)
+        predicate = nil
+        graph.each_statement do |st|
+          if st.predicate.to_s == Configuration.instance.class_predicate.to_s
+            predicate = st.object.to_s
+            break
+          end
         end
-      end
 
-      if predicate
-        instantiable = ActiveMedusa::Base.class_of_predicate(predicate)
-        if instantiable
-          entity = instantiable.new(repository_url: repository_url)
-          entity.send(:populate_self_from_graph, graph)
-          return entity
+        if predicate
+          instantiable = ActiveMedusa::Base.class_of_predicate(predicate)
+          if instantiable
+            entity = instantiable.new(repository_url: repository_url)
+            entity.send(:populate_self_from_graph, graph)
+            return entity
+          else
+            raise "Unable to instantiate a(n) #{instantiable}"
+          end
         else
-          raise "Unable to instantiate a(n) #{instantiable}"
+          raise "Unable to find a class associated with this URI"
         end
-      else
-        raise "Unable to find a class associated with this URI"
+      rescue HTTPClient::BadResponseError => e
+        raise RepositoryError.from_bad_response_error(e)
       end
       nil
     end
@@ -214,6 +218,7 @@ module ActiveMedusa
     # @option options [Boolean] :also_tombstone Also deletes the repository
     #   node's `fcr:tombstone`.
     # @return [Boolean]
+    # @raise [ActiveMedusa::RepositoryError]
     #
     def destroy(options = {})
       if @persisted and !@destroyed
@@ -221,12 +226,17 @@ module ActiveMedusa
         if url
           run_callbacks :destroy do
             url = url.chomp('/')
-            client = Fedora.client
-            client.delete(url)
-            client.delete("#{url}/fcr:tombstone") if options[:also_tombstone]
-            @destroyed = true
-            @persisted = false
-            self.freeze
+            begin
+              client = Fedora.client
+              client.delete(url)
+              client.delete("#{url}/fcr:tombstone") if options[:also_tombstone]
+            rescue HTTPClient::BadResponseError => e
+              raise RepositoryError.from_bad_response_error(e)
+            else
+              @destroyed = true
+              @persisted = false
+              self.freeze
+            end
           end
         end
         return true
@@ -260,8 +270,8 @@ module ActiveMedusa
     # repository URL (for existing entities) *or* it must have a parent
     # container URL (for new entities).
     #
-    # @raise [RuntimeError]
-    # @raise [ActiveMedusa::RecordInvalid]
+    # @raise [RuntimeError, ActiveMedusa::RecordInvalid,
+    #   ActiveMedusa::RepositoryError]
     #
     def save
       raise 'Cannot save a destroyed object.' if self.destroyed?
@@ -282,8 +292,8 @@ module ActiveMedusa
 
     ##
     # @param params [Hash]
-    # @raise [RuntimeError]
-    # @raise [ActiveMedusa::RecordInvalid]
+    # @raise [RuntimeError, ActiveMedusa::RecordInvalid,
+    #   ActiveMedusa::RepositoryError]
     #
     def update(params)
       params.except(*REJECT_PARAMS).each do |k, v|
@@ -294,8 +304,8 @@ module ActiveMedusa
 
     ##
     # @param params [Hash]
-    # @raise [RuntimeError]
-    # @raise [ActiveMedusa::RecordInvalid]
+    # @raise [RuntimeError, ActiveMedusa::RecordInvalid,
+    #   ActiveMedusa::RepositoryError]
     #
     def update!(params)
       params.except(*REJECT_PARAMS).each do |k, v|
@@ -320,16 +330,22 @@ module ActiveMedusa
     protected
 
     ##
-    # @return [RDF::Graph,nil] The current graph, or `nil` if there is none.
+    # @return [RDF::Graph, nil] The current graph, or `nil` if there is none.
+    # @raise [ActiveMedusa::RepositoryError]
     #
     def fetch_current_graph
       url = self.repository_metadata_url # already transactionalized
       if url
         graph = RDF::Graph.new
-        response = Fedora.client.get(
-            url, nil, { 'Accept' => 'application/n-triples' })
-        graph.from_ntriples(response.body)
-        return graph
+        begin
+          response = Fedora.client.get(
+              url, nil, { 'Accept' => 'application/n-triples' })
+        rescue HTTPClient::BadResponseError => e
+          raise RepositoryError.from_bad_response_error(e)
+        else
+          graph.from_ntriples(response.body)
+          return graph
+        end
       end
       nil
     end
@@ -420,8 +436,8 @@ module ActiveMedusa
     ##
     # Saves an existing node.
     #
-    # @raise [RuntimeError]
-    # @raise [ActiveMedusa::RecordInvalid]
+    # @raise [RuntimeError, ActiveMedusa::RecordInvalid,
+    #   ActiveMedusa::RepositoryError]
     #
     def save_existing
       run_callbacks :update do
@@ -430,14 +446,19 @@ module ActiveMedusa
         url = transactional_url(self.repository_metadata_url)
         body = self.rdf_graph.to_ttl
         headers = { 'Content-Type' => 'text/turtle' }
-        Fedora.client.put(url, body, headers)
+        begin
+          Fedora.client.put(url, body, headers)
+        rescue HTTPClient::BadResponseError => e
+          raise RepositoryError.from_bad_response_error(e)
+        end
       end
     end
 
     ##
     # Abstract method that subclasses must override.
     #
-    # @raise [RuntimeError]
+    # @raise [RuntimeError, ActiveMedusa::RecordInvalid,
+    #   ActiveMedusa::RepositoryError]
     #
     def save_new
       raise 'Subclasses must override save_new()'
@@ -446,6 +467,8 @@ module ActiveMedusa
     private
 
     ##
+    # Marks an instance as loaded, or not.
+    #
     # @param loaded [Boolean]
     #
     def loaded=(loaded)

@@ -6,6 +6,7 @@ require 'active_medusa/container'
 require 'active_medusa/configuration'
 require 'active_medusa/indexable'
 require 'active_medusa/record_invalid'
+require 'active_medusa/repository_error'
 require 'active_medusa/version'
 require 'rdf/graph'
 
