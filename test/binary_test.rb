@@ -68,6 +68,24 @@ class BinaryTest < Minitest::Test
     assert response.body.include?('assert response.body.include?')
   end
 
+  def test_save_with_upload_io
+    slug = SLUGS[0]
+    media_type = 'image/jpeg'
+    pathname = File.join(__dir__, 'fixtures/stupid_signs.jpg')
+    expected_url = "#{@config.fedora_url}/#{slug}"
+    bs = Bytestream.new(parent_url: @config.fedora_url,
+                        upload_io: File.read(pathname),
+                        requested_slug: slug,
+                        media_type: media_type)
+    bs.save!
+    assert_equal expected_url, bs.repository_url
+    assert bs.persisted?
+
+    response = @http.get(expected_url)
+    assert_equal media_type, response.header['Content-Type'].first
+    assert response.body.length >= File.read(pathname).length
+  end
+
   def test_save_with_external_resource
     slug = SLUGS[0]
     expected_url = "#{@config.fedora_url}/#{slug}"
@@ -82,6 +100,62 @@ class BinaryTest < Minitest::Test
     response = @http.get(expected_url)
     assert_equal 307, response.status
     assert response.header['Location'].first.include?(resource_url)
+  end
+
+  ##
+  # Tests that upload_filename overrides any other filename
+  #
+  def test_save_with_upload_filename_and_upload_io
+    slug = SLUGS[0]
+    media_type = 'text/plain'
+    pathname = File.join(__dir__, 'fixtures/stupid_signs.jpg')
+    expected_url = "#{@config.fedora_url}/#{slug}"
+    bs = Bytestream.new(parent_url: @config.fedora_url,
+                        upload_io: File.read(pathname),
+                        upload_filename: 'carrots.txt',
+                        requested_slug: slug,
+                        media_type: media_type)
+    bs.save!
+    assert_equal expected_url, bs.repository_url
+    assert bs.persisted?
+
+    response = @http.get(expected_url + '/fcr:metadata', nil,
+                         { 'Accept' => 'application/n-triples' })
+    graph = RDF::Graph.new
+    graph.from_ntriples(response.body)
+    graph.each_statement do |st|
+      if st.predicate.to_s == 'http://www.loc.gov/premis/rdf/v1#hasOriginalName'
+        assert_equal 'carrots.txt', st.object.to_s
+      end
+    end
+  end
+
+  ##
+  # Tests that upload_filename overrides the filename in the pathname
+  #
+  def test_save_with_upload_filename_and_upload_pathname
+    slug = SLUGS[0]
+    media_type = 'text/plain'
+    pathname = File.join(__dir__, 'fixtures/stupid_signs.jpg')
+    expected_url = "#{@config.fedora_url}/#{slug}"
+    bs = Bytestream.new(parent_url: @config.fedora_url,
+                        upload_pathname: pathname,
+                        upload_filename: 'carrots.txt',
+                        requested_slug: slug,
+                        media_type: media_type)
+    bs.save!
+    assert_equal expected_url, bs.repository_url
+    assert bs.persisted?
+
+    response = @http.get(expected_url + '/fcr:metadata', nil,
+                         { 'Accept' => 'application/n-triples' })
+    graph = RDF::Graph.new
+    graph.from_ntriples(response.body)
+    graph.each_statement do |st|
+      if st.predicate.to_s == 'http://www.loc.gov/premis/rdf/v1#hasOriginalName'
+        assert_equal 'carrots.txt', st.object.to_s
+      end
+    end
   end
 
   def test_save_with_nothing_to_save_raises_error

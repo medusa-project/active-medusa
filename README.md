@@ -92,7 +92,8 @@ Then execute:
    `id`.
 7. Replace any handling of `HTTPClient::BadResponseError` with handling of
    `ActiveMedusa::RepositoryError`.
-8. Reindex.
+8. Replace uses of `ActiveMedusa::Binary.upload_pathname` with `upload_io`.
+9. Reindex.
 
 # Usage
 
@@ -459,10 +460,10 @@ b = Bytestream.new(parent_url: 'http://url/of/parent/container')
 ```
 
 Before saving it, you will probably want to associate some data with it. You
-can specify a file to upload:
+can specify an IO stream to read:
 
 ```ruby
-b.upload_pathname = File.join('path', 'to', 'a', 'file.tif')
+b.upload_io = File.read(File.join('path', 'to', 'a', 'file.tif'))
 ```
 
 Or, you can specify an external URL:
@@ -477,11 +478,17 @@ Optionally, but ideally, you should also specify the binary's media type:
 b.media_type = 'image/tiff'
 ```
 
+If you want, you can override its filename (non-URLs only):
+
+```ruby
+b.upload_filename = 'overridden.tif'
+```
+
 At this point, it can be saved just like a container:
 
 ```ruby
 b.save!
-puts b.repository_url # binary content now available here
+puts b.id # binary node now available here
 ```
 
 Once the binary content has been saved, it cannot be changed. In Fedora,
@@ -693,6 +700,9 @@ ActiveMedusa uses [semantic versioning](http://semver.org).
 * Made `ActiveMedusa::Base.repository_url` an alias of `id`.
 * `ActiveMedusa::RepositoryError` is raised wherever an
   `HTTPClient::BadResponseError` would have been leaked.
+* `ActiveMedusa::Binary.upload_pathname` has been deprecated in favor of
+  `upload_io`.
+* Added `ActiveMedusa::Binary.upload_filename`.
 * ActiveMedusa no longer has anything to do with UUIDs.
 * ActiveMedusa now works with Fedora 4.3.
 

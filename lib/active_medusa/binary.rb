@@ -7,6 +7,8 @@ module ActiveMedusa
   #
   class Binary < Base
 
+    extend Gem::Deprecate
+
     # @!attribute external_resource_url
     #   @return [String]
     attr_accessor :external_resource_url
@@ -16,9 +18,23 @@ module ActiveMedusa
     #   @return [String]
     attr_accessor :media_type
 
+    # @!attribute upload_filename
+    #   @return [String] Overrides the filename sent to the repository in the
+    #     `Content-Disposition` header during upload.
+    attr_accessor :upload_filename
+
+    # @!attribute upload_io
+    #   @return [IO]
+    attr_accessor :upload_io
+
     # @!attribute upload_pathname
-    #   @return [String]
+    #   @return [String] The pathname of the file to upload; its actual filename
+    #     will be sent to the repository in the `Content-Disposition` header
+    #     unless `upload_filename` is set.
+    #   @deprecated Use {#upload_io} instead
     attr_accessor :upload_pathname
+
+    deprecate :upload_pathname, :upload_io, 2015, 11
 
     def repository_metadata_url
       self.repository_url ?
@@ -41,7 +57,8 @@ module ActiveMedusa
         response = nil
         if self.upload_pathname
           File.open(self.upload_pathname) do |file|
-            filename = File.basename(self.upload_pathname)
+            filename = self.upload_filename ||
+                File.basename(self.upload_pathname)
             headers = {
                 'Content-Disposition' => "attachment; filename=\"#{filename}\""
             }
@@ -55,6 +72,21 @@ module ActiveMedusa
             rescue HTTPClient::BadResponseError => e
               raise RepositoryError.from_bad_response_error(e)
             end
+          end
+        elsif self.upload_io
+          headers = {}
+          headers['Content-Disposition'] =
+              "attachment; filename=\"#{self.upload_filename}\"" if
+              self.upload_filename
+          headers['Content-Type'] = self.media_type if
+              self.media_type.present?
+          headers['Slug'] = self.requested_slug if
+              self.requested_slug.present?
+          url = transactional_url(self.parent_url)
+          begin
+            response = Fedora.client.post(url, upload_io, headers)
+          rescue HTTPClient::BadResponseError => e
+            raise RepositoryError.from_bad_response_error(e)
           end
         elsif self.external_resource_url
           url = transactional_url(self.parent_url)
