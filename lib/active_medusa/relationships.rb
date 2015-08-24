@@ -70,7 +70,7 @@ module ActiveMedusa
                 a.type == ActiveMedusa::Association::Type::BELONGS_TO }.first
             self.rdf_graph.each_statement do |st|
               if st.predicate.to_s == association.rdf_predicate
-                owner = association.target_class.find_by_uri(st.object.to_s)
+                owner = association.target_class.find(st.object.to_s)
                 @belongs_to_instances[entity_class] = owner
                 break
               end
@@ -128,8 +128,6 @@ module ActiveMedusa
     end
 
     ##
-    # Warning: this method is currently O(n).
-    #
     # @return [ActiveMedusa::Relation] Relation of all LDP children for which
     # there exist corresponding `ActiveMedusa::Base` subclasses.
     #
@@ -139,7 +137,7 @@ module ActiveMedusa
         self.rdf_graph.each_statement do |st|
           if st.predicate.to_s == 'http://www.w3.org/ns/ldp#contains'
             # TODO: make this more efficient
-            child = ActiveMedusa::Container.find_by_uri(st.object.to_s)
+            child = ActiveMedusa::Container.find(st.object.to_s)
             @children << child if child
           end
         end
@@ -155,7 +153,7 @@ module ActiveMedusa
         self.rdf_graph.each_statement do |st|
           if st.predicate.to_s ==
               'http://fedora.info/definitions/v4/repository#hasParent'
-            @parent = ActiveMedusa::Container.find_by_uri(st.object.to_s)
+            @parent = ActiveMedusa::Container.find(st.object.to_s)
             break
           end
         end
