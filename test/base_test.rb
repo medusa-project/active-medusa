@@ -316,4 +316,13 @@ class BaseTest < Minitest::Test
     end
   end
 
+  #
+
+  def test_validation_callbacks
+    item = Item.create!(parent_url: @config.fedora_url, full_text: 'cats')
+    item.update(full_text: 'dogs')
+    assert item.instance_variable_get('@before_validation_called')
+    assert item.instance_variable_get('@after_validation_called')
+  end
+
 end

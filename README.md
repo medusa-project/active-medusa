@@ -667,11 +667,13 @@ Your entities can use the following `ActiveModel::Model` callbacks:
 * `before_load`
 * `before_save`
 * `before_update`
+* `before_validation`
 * `after_create`
 * `after_destroy`
 * `after_load`
 * `after_save`
 * `after_update`
+* `after_validation`
 
 Example:
 
@@ -692,6 +694,7 @@ ActiveMedusa uses [semantic versioning](http://semver.org).
 
 ## 2.0.0
 
+* Added validation callbacks on `ActiveMedusa::Base`.
 * Removed `ActiveMedusa::Configuration.solr_uuid_field`.
 * Renamed `ActiveMedusa::Configuration.solr_uri_field` to `solr_id_field`.
 * Made `ActiveMedusa::Querying.find_by_uri` an alias of `find`.

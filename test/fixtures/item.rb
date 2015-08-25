@@ -34,6 +34,8 @@ class Item < ActiveMedusa::Container
   after_save :do_after_save
   before_update :do_before_update
   after_update :do_after_update
+  before_validation :do_before_validation
+  after_validation :do_after_validation
 
   def do_before_create
     @before_create_called = true
@@ -73,5 +75,13 @@ class Item < ActiveMedusa::Container
 
   def do_after_update
     @after_update_called = true
+  end
+
+  def do_before_validation
+    @before_validation_called = true
+  end
+
+  def do_after_validation
+    @after_validation_called = true
   end
 end

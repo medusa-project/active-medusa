@@ -28,7 +28,7 @@ module ActiveMedusa
     REJECT_PARAMS = [:id]
 
     define_model_callbacks :create, :destroy, :load, :save, :update,
-                           only: [:after, :before]
+                           :validation, only: [:after, :before]
 
     @@entity_class_uris = Set.new
     @@properties = Set.new
@@ -442,7 +442,9 @@ module ActiveMedusa
     def save_existing
       run_callbacks :update do
         populate_outgoing_graph(self.rdf_graph)
-        raise ActiveMedusa::RecordInvalid unless self.valid?
+        run_callbacks :validation do
+          raise ActiveMedusa::RecordInvalid unless self.valid?
+        end
         url = transactional_url(self.repository_metadata_url)
         body = self.rdf_graph.to_ttl
         headers = { 'Content-Type' => 'text/turtle' }

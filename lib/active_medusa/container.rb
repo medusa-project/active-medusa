@@ -33,7 +33,9 @@ module ActiveMedusa
     def save_new
       run_callbacks :create do
         populate_outgoing_graph(self.rdf_graph)
-        raise ActiveMedusa::RecordInvalid unless self.valid?
+        run_callbacks :validation do
+          raise ActiveMedusa::RecordInvalid unless self.valid?
+        end
         url = transactional_url(self.parent_url)
         body = self.rdf_graph.to_ttl
         headers = { 'Content-Type' => 'text/turtle' }
