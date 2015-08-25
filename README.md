@@ -254,6 +254,15 @@ See the [documentation for Indexable]
 (http://medusa-project.github.io/active-medusa/ActiveMedusa/Indexable.html)
 if you wish to change the way your entities get indexed.
 
+#### Handling cascading deletes
+
+When a node is deleted in Fedora, all of its children are deleted along with it.
+Currently, `Indexable` does **not** account for this. To deal with this
+properly, code would need to be added to ActiveMedusa to delete the entire
+subtree of the deleted node node-by-node from deepest to shallowest, which
+could be very slow, depending on the size of the tree. There is an [issue for
+this in GitHub](https://github.com/medusa-project/active-medusa/issues/8).
+
 ### Updating Solr with fcrepo-camel
 
 For this, you will need to get fcrepo-camel working, which is covered
@@ -265,8 +274,8 @@ Either way, you will need to account for all of the same fields as
 `ActiveMedusa::Indexable.solr_document` does; take a look at its implementation
 for details.
 
-*Note: with this strategy, do **not** `include ActiveMedusa::Indexable` in your
-models, as above.*
+*Note: with this strategy, do **not** add `include ActiveMedusa::Indexable` to
+your entities.*
 
 The [Fedora wiki](https://wiki.duraspace.org/display/FEDORA4x/External+Search)
 shows indexable nodes receiving `indexing:hasIndexingTransformation` and
@@ -278,9 +287,11 @@ class Item < ActiveMedusa::Container
   before_create :add_indexing_triples
 
   def add_indexing_triples
-    self.rdf_graph << [nil, RDF::URI('http://fedora.info/definitions/v4/indexing#hasIndexingTransformation'),
+    self.rdf_graph << [RDF::URI(),
+        RDF::URI('http://fedora.info/definitions/v4/indexing#hasIndexingTransformation'),
         'default']
-    self.rdf_graph << [nil, RDF::URI('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+    self.rdf_graph << [RDF::URI(),
+        RDF::URI('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
         RDF::URI('http://fedora.info/definitions/v4/indexing#Indexable')]
   end
 end
@@ -292,7 +303,7 @@ end
 repository until `save` is called on it.
 
 Before it can be saved, however, you must specify where in the Fedora node
-hierarchy you want it to reside. You do that by setting its `parent_url`
+hierarchy you want it to reside. This is done by setting its `parent_url`
 property:
 
 ```ruby
@@ -304,7 +315,7 @@ Or, if you are not sure of its parent's URL, but you have its parent:
 
 ```ruby
 parent_item = Item.find(..)
-new_item = Item.new(parent_url: parent_item.repository_url)
+new_item = Item.new(parent_url: parent_item.id)
 new_item.save!
 ```
 
@@ -320,7 +331,7 @@ statement, as well as any `belongs_to` relationship.
 
 ### Establishing Relationships
 
-Establishing relationships between two new entities is easy:
+To establish relationships between two new entities:
 
 ```ruby
 collection = Collection.new(..)
@@ -329,10 +340,9 @@ item = Item.new(collection: collection)
 item.save!
 ```
 
-As of the current version, relationships must be set on the owned side, so
-doing something like `collection.items << item` is not possible. Also, notice
-that we had to save both entities separately. ActiveMedusa doesn't cascade
-these.
+Currently, relationships must be set on the owned side, so doing something like
+`collection.items << item` is not possible. Also, notice that both entities had
+to be saved separately. ActiveMedusa doesn't cascade saves.
 
 ### Requesting a Slug 🐌
 
@@ -348,7 +358,7 @@ item.save!
 There is no guarantee, however, that the entity will actually receive this slug,
 and no error will be raised if it doesn't.
 
-For reasons related to Fedora performance, slugs are not advised.
+For the sake of Fedora performance, slugs are not advised.
 
 ## Updating Entities
 
@@ -362,20 +372,17 @@ item.update(some_property: 55)
 
 ## Deleting Entities
 
-Call `delete` on an entity. This method accepts an optional boolean parameter
-that will delete its tombstone as well.
+Call `delete` on an entity. This method accepts an optional `also_tombstone:`
+boolean parameter that will delete its tombstone as well.
 
 *Note: Entities will not be deleted from Solr until the Solr index has been
 committed. ActiveMedusa will not commit it automatically.*
 
 ## Loading Entities
 
-*Note: Newly created entities cannot be loaded until the Solr index has been
-committed. ActiveMedusa will not commit it automatically.*
-
 ### By Repository URI
 
-ActiveMedusa uses the node repository URI as the entity ID since version 2.0.0.
+Since version 2.0.0, ActiveMedusa uses the node repository URI as the entity ID:
 
 ```ruby
 item = Item.find('http://localhost:8080/fcrepo/rest/kumquats')
@@ -386,7 +393,7 @@ This is the only finder method that will raise an error if nothing is found.
 ### By Property
 
 When you use `property` statements in entity classes, a `find_by_x` method is
-auto-generated for each:
+auto-generated for each. So, if you had a property named `title`:
 
 ```ruby
 item = Item.find_by_title('2003 Global Outlook for 6-Quart Slow-Cookers')
@@ -412,13 +419,13 @@ item_or_collection = ActiveMedusa::Base.load(uri)
 
 ### Reading & Writing Metadata
 
-The item's complete RDF graph is available by calling `rdf_graph` on any entity
-instance. This returns an `RDF::Graph` instance which you can read:
+The item's underlying RDF graph is available by calling `rdf_graph` on any
+entity instance. This returns an `RDF::Graph` instance which you can read:
 
 ```ruby
 item.rdf_graph.each_statement do |st|
   if st.predicate.to_s == 'http://purl.org/dc/elements/1.1/title'
-    puts 'Title is: ' + st.object.to_s
+    puts "Title is: #{st.object}"
   end
 end
 ```
@@ -426,7 +433,8 @@ end
 As well as write to:
 
 ```ruby
-item.rdf_graph << [nil, RDF::URI('http://purl.org/dc/elements/1.1/title'),
+item.rdf_graph << [RDF::URI(),
+    RDF::URI('http://purl.org/dc/elements/1.1/title'),
     'Epistemology of the Kumquat']
 ```
 
@@ -459,7 +467,7 @@ a `Bytestream` can be initialized like an `Item`:
 b = Bytestream.new(parent_url: 'http://url/of/parent/container')
 ```
 
-Before saving it, you will probably want to associate some data with it. You
+Before saving this, you will probably want to associate some data with it. You
 can specify an IO stream to read:
 
 ```ruby
@@ -507,8 +515,8 @@ created entities will not appear in search results in the same thread unless
 enough time has elapsed between creation and query for Solr to have received
 them, which will rarely be the case. An ugly way of getting around this is to
 `sleep` for a bit after saving an entity to wait for Solr to catch up - hoping
-that it does in time. This is a crude workaround for a fundamental "gotcha" of
-this kind of asynchronous messaging architecture.*
+that it does in time. This is a crude workaround for a fundamental consequence
+of this kind of asynchronous messaging architecture.*
 
 ```ruby
 items = Item.all.where(some_property: 'cats').
@@ -690,7 +698,7 @@ end
 
 ActiveMedusa uses [semantic versioning](http://semver.org).
 
-# Version History
+# Change Log
 
 ## 2.0.0
 
