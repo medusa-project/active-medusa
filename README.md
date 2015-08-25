@@ -92,8 +92,7 @@ Then execute:
    `id`.
 7. Replace any handling of `HTTPClient::BadResponseError` with handling of
    `ActiveMedusa::RepositoryError`.
-8. Replace uses of `ActiveMedusa::Binary.upload_pathname` with `upload_io`.
-9. Reindex.
+8. Reindex.
 
 # Usage
 
@@ -711,9 +710,7 @@ ActiveMedusa uses [semantic versioning](http://semver.org).
 * Made `ActiveMedusa::Base.repository_url` an alias of `id`.
 * `ActiveMedusa::RepositoryError` is raised wherever an
   `HTTPClient::BadResponseError` would have been leaked.
-* `ActiveMedusa::Binary.upload_pathname` has been deprecated in favor of
-  `upload_io`.
-* Added `ActiveMedusa::Binary.upload_filename`.
+* Added `ActiveMedusa::Binary.upload_io` and `upload_filename`.
 * ActiveMedusa no longer has anything to do with UUIDs.
 * ActiveMedusa now works with Fedora 4.3.
 

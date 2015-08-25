@@ -34,8 +34,6 @@ module ActiveMedusa
     #   @deprecated Use {#upload_io} instead
     attr_accessor :upload_pathname
 
-    deprecate :upload_pathname, :upload_io, 2015, 11
-
     def repository_metadata_url
       self.repository_url ?
           "#{transactional_url(self.repository_url).chomp('/')}/fcr:metadata" :
