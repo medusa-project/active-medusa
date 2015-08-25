@@ -177,4 +177,12 @@ class BinaryTest < Minitest::Test
     assert bs.rdf_graph.count > 10
   end
 
+  def test_save_consecutively
+    bs = Bytestream.new(parent_url: @config.fedora_url,
+                        upload_pathname: __FILE__,
+                        requested_slug: SLUGS[0],
+                        media_type: 'text/plain')
+    3.times { bs.save! }
+  end
+
 end
