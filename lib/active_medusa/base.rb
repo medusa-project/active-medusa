@@ -360,7 +360,13 @@ module ActiveMedusa
     def populate_outgoing_graph(graph)
       # add properties from subclass property definitions
       @@properties.select{ |p| p.class == self.class }.each do |prop|
-        graph.delete([nil, RDF::URI(prop.rdf_predicate), nil])
+        # ebucore:hasMimeType is repository-managed; F4 will complain if it is
+        # deleted
+        unless self.kind_of?(ActiveMedusa::Binary) and
+            ['http://www.ebu.ch/metadata/ontologies/ebucore/ebucore#hasMimeType'].
+                include?(prop.rdf_predicate)
+          graph.delete([nil, RDF::URI(prop.rdf_predicate), nil])
+        end
         value = send(prop.name)
         case prop.type.to_sym
           when :boolean
