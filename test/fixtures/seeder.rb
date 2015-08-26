@@ -5,7 +5,7 @@ require 'rdf'
 class Seeder
 
   def initialize(config)
-    @http = ActiveMedusa::Fedora.client
+    @http = ActiveMedusa::Fedora
     @config = config
   end
 
