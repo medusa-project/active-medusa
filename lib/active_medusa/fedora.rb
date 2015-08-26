@@ -44,19 +44,25 @@ module ActiveMedusa
 
     private
 
-    ##
-    # @return [HTTPClient]
-    #
-    def self.client
-      @@http_client = HTTPClient.new unless @@http_client
-      @@http_client
-    end
-
     def self.request(method, url, body, headers)
+      logger = Configuration.instance.logger
+      # log the request
+      logger.info("#{method.to_s.upcase} #{url}")
+      logger.debug("Request headers:\n#{headers.map{ |k, v| "#{k}: #{v}" }.join("\n")}")
+      logger.debug("Request body:\n#{body.slice(0, 10000)}") if
+          body.kind_of?(String)
       begin
-        client.send(method, url, body, headers)
+        @@http_client = HTTPClient.new unless @@http_client
+        response = @@http_client.send(method, url, body, headers)
+        # log the response
+        logger.info("#{response.status} #{response.reason}")
+        logger.debug("Response headers:\n#{response.header.all.map{ |k, v| "#{k}: #{v}" }.join("\n")}")
+        logger.debug("Response body:\n#{response.body.slice(0, 10000)}") if
+            response.body.kind_of?(String)
       rescue HTTPClient::BadResponseError => e
         raise RepositoryError.from_bad_response_error(e)
+      else
+        return response
       end
     end
 
