@@ -235,7 +235,7 @@ Additional fields can be added by overriding <code>solr_document</code>:</p>
       <pre class="code"><span class="info file"># File 'lib/active_medusa/indexable.rb', line 33</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_delete_from_solr'>delete_from_solr</span>
-  <span class='const'>Solr</span><span class='period'>.</span><span class='id identifier rubyid_client'>client</span><span class='period'>.</span><span class='id identifier rubyid_delete_by_id'>delete_by_id</span><span class='lparen'>(</span><span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_repository_url'>repository_url</span><span class='rparen'>)</span> <span class='kw'>if</span> <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_destroyed?'>destroyed?</span>
+  <span class='const'>Solr</span><span class='period'>.</span><span class='id identifier rubyid_delete_by_id'>delete_by_id</span><span class='lparen'>(</span><span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_id'>id</span><span class='rparen'>)</span> <span class='kw'>if</span> <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_destroyed?'>destroyed?</span>
 <span class='kw'>end</span></pre>
     </td>
   </tr>
@@ -265,7 +265,7 @@ Additional fields can be added by overriding <code>solr_document</code>:</p>
       <pre class="code"><span class="info file"># File 'lib/active_medusa/indexable.rb', line 37</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_reindex_in_solr'>reindex_in_solr</span>
-  <span class='const'>Solr</span><span class='period'>.</span><span class='id identifier rubyid_client'>client</span><span class='period'>.</span><span class='id identifier rubyid_add'>add</span><span class='lparen'>(</span><span class='id identifier rubyid_solr_document'>solr_document</span><span class='rparen'>)</span>
+  <span class='const'>Solr</span><span class='period'>.</span><span class='id identifier rubyid_add'>add</span><span class='lparen'>(</span><span class='id identifier rubyid_solr_document'>solr_document</span><span class='rparen'>)</span>
 <span class='kw'>end</span></pre>
     </td>
   </tr>
@@ -381,7 +381,7 @@ information necessary to work with ActiveMedusa.</p>
 </div>
 
     <div id="footer">
-  Generated on Tue Aug 25 10:35:42 2015 by
+  Generated on Wed Aug 26 15:08:55 2015 by
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
   0.8.7.6 (ruby-2.2.2).
 </div>
