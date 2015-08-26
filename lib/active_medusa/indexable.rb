@@ -31,11 +31,11 @@ module ActiveMedusa
     end
 
     def delete_from_solr
-      Solr.client.delete_by_id(self.repository_url) if self.destroyed?
+      Solr.delete_by_id(self.id) if self.destroyed?
     end
 
     def reindex_in_solr
-      Solr.client.add(solr_document)
+      Solr.add(solr_document)
     end
 
     ##

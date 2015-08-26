@@ -239,7 +239,7 @@ module ActiveMedusa
           end
         end
 
-        @solr_response = Solr.client.get(endpoint, params: params)
+        @solr_response = Solr.get(endpoint, params: params)
 
         if !@more_like_this and @facet
           @results.facet_fields = solr_facet_fields_to_objects(

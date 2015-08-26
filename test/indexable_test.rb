@@ -8,7 +8,6 @@ class IndexableTest < Minitest::Test
     @seeder = Seeder.new(@config)
     @seeder.teardown
     @seeder.seed
-    @solr = ActiveMedusa::Solr.client
     sleep 2 # wait for changes to propagate to solr
     @http.get("#{@config.solr_url}/#{@config.solr_core}/update?commit=true")
     sleep 2 # wait for solr to commit
@@ -19,7 +18,7 @@ class IndexableTest < Minitest::Test
     url = @config.solr_url.chomp('/') + '/' + @config.solr_core
     @http = HTTPClient.new
     @http.get(url + '/update?stream.body=<delete><query>*:*</query></delete>')
-    @solr.commit
+    ActiveMedusa::Solr.client.commit
   end
 
   def test_delete_from_solr
@@ -28,17 +27,17 @@ class IndexableTest < Minitest::Test
     # delete it
     item.delete
     sleep 2
-    @solr.commit
+    ActiveMedusa::Solr.client.commit
     sleep 2
     # check that it no longer exists in solr
-    response = @solr.get(
+    response = ActiveMedusa::Solr.get(
         'select', params: { q: "#{@config.solr_id_field}:\"#{item.id}\"" })
     assert_equal 0, response['response']['docs'].length
   end
 
   def test_reindex_in_solr
     # reindex_in_solr will have already been invoked during seeding
-    response = @solr.get(
+    response = ActiveMedusa::Solr.get(
         'select', params: { q: '*:*' })
     assert response['response']['docs'].length > 0
   end
