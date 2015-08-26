@@ -701,6 +701,7 @@ ActiveMedusa uses [semantic versioning](http://semver.org).
 
 ## 2.0.0
 
+* Added request/response logging.
 * Added validation callbacks on `ActiveMedusa::Base`.
 * Removed `ActiveMedusa::Configuration.solr_uuid_field`.
 * Renamed `ActiveMedusa::Configuration.solr_uri_field` to `solr_id_field`.
@@ -735,19 +736,6 @@ To release a new version, update the version number in `version.rb`, and then
 run `bundle exec rake release` to create a git tag for the version, push git
 commits and tags, and push the `.gem` file to
 [rubygems.org](https://rubygems.org).
-
-## Debugging
-
-`ActiveMedusa::Relation` has a `solr_response` method that you can use to
-inspect the query and see the raw Solr results. Use it like this:
-
-```ruby
-items = Item.all.to_a # to_a executes the Solr request
-puts items.solr_response.inspect
-puts items.solr_response.request.inspect
-```
-
-Note that `solr_response` will return `nil` until a request has been executed.
 
 # Contributing
 
