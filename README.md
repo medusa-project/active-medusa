@@ -712,8 +712,8 @@ ActiveMedusa uses [semantic versioning](http://semver.org).
 * `ActiveMedusa::RepositoryError` is raised wherever an
   `HTTPClient::BadResponseError` would have been leaked.
 * Added `ActiveMedusa::Binary.upload_io` and `upload_filename`.
+* Fixed a bug when using `ebucore:hasMimeType` in a property with Fedora 4.3.
 * ActiveMedusa no longer has anything to do with UUIDs.
-* ActiveMedusa now works with Fedora 4.3.
 
 ## 1.1.0
 
