@@ -65,11 +65,7 @@ module ActiveMedusa
             headers['Slug'] = self.requested_slug if
                 self.requested_slug.present?
             url = transactional_url(self.parent_url)
-            begin
-              response = Fedora.client.post(url, file, headers)
-            rescue HTTPClient::BadResponseError => e
-              raise RepositoryError.from_bad_response_error(e)
-            end
+            response = Fedora.post(url, file, headers)
           end
         elsif self.upload_io
           headers = {}
@@ -81,24 +77,16 @@ module ActiveMedusa
           headers['Slug'] = self.requested_slug if
               self.requested_slug.present?
           url = transactional_url(self.parent_url)
-          begin
-            response = Fedora.client.post(url, upload_io, headers)
-          rescue HTTPClient::BadResponseError => e
-            raise RepositoryError.from_bad_response_error(e)
-          end
+          response = Fedora.post(url, upload_io, headers)
         elsif self.external_resource_url
           url = transactional_url(self.parent_url)
           headers = { 'Content-Type' => 'text/plain' }
           headers['Slug'] = self.requested_slug if
               self.requested_slug.present?
-          response = Fedora.client.post(url, nil, headers)
+          response = Fedora.post(url, nil, headers)
           headers = { 'Content-Type' => "message/external-body; "\
           "access-type=URL; URL=\"#{self.external_resource_url}\"" }
-          begin
-            Fedora.client.put(response.header['Location'].first, nil, headers)
-          rescue HTTPClient::BadResponseError => e
-            raise RepositoryError.from_bad_response_error(e)
-          end
+          Fedora.put(response.header['Location'].first, nil, headers)
         else
           raise 'Unable to save binary: both upload_pathname and '\
           'external_resource_url are nil.'

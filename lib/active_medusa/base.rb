@@ -111,34 +111,30 @@ module ActiveMedusa
     #
     def self.load(repository_url)
       # find the class to instantiate
-      begin
-        f4_response = Fedora.client.get(
-            repository_url.chomp('/') + '/fcr:metadata', nil,
-            { 'Accept' => 'application/n-triples' })
-        graph = RDF::Graph.new
-        graph.from_ntriples(f4_response.body)
-        predicate = nil
-        graph.each_statement do |st|
-          if st.predicate.to_s == Configuration.instance.class_predicate.to_s
-            predicate = st.object.to_s
-            break
-          end
+      f4_response = Fedora.get(
+          repository_url.chomp('/') + '/fcr:metadata', nil,
+          { 'Accept' => 'application/n-triples' })
+      graph = RDF::Graph.new
+      graph.from_ntriples(f4_response.body)
+      predicate = nil
+      graph.each_statement do |st|
+        if st.predicate.to_s == Configuration.instance.class_predicate.to_s
+          predicate = st.object.to_s
+          break
         end
+      end
 
-        if predicate
-          instantiable = ActiveMedusa::Base.class_of_predicate(predicate)
-          if instantiable
-            entity = instantiable.new(repository_url: repository_url)
-            entity.send(:populate_self_from_graph, graph)
-            return entity
-          else
-            raise "Unable to instantiate a(n) #{instantiable}"
-          end
+      if predicate
+        instantiable = ActiveMedusa::Base.class_of_predicate(predicate)
+        if instantiable
+          entity = instantiable.new(repository_url: repository_url)
+          entity.send(:populate_self_from_graph, graph)
+          return entity
         else
-          raise "Unable to find a class associated with this URI"
+          raise "Unable to instantiate a(n) #{instantiable}"
         end
-      rescue HTTPClient::BadResponseError => e
-        raise RepositoryError.from_bad_response_error(e)
+      else
+        raise "Unable to find a class associated with this URI"
       end
       nil
     end
@@ -227,9 +223,8 @@ module ActiveMedusa
           run_callbacks :destroy do
             url = url.chomp('/')
             begin
-              client = Fedora.client
-              client.delete(url)
-              client.delete("#{url}/fcr:tombstone") if options[:also_tombstone]
+              Fedora.delete(url)
+              Fedora.delete("#{url}/fcr:tombstone") if options[:also_tombstone]
             rescue HTTPClient::BadResponseError => e
               raise RepositoryError.from_bad_response_error(e)
             else
@@ -337,15 +332,10 @@ module ActiveMedusa
       url = self.repository_metadata_url # already transactionalized
       if url
         graph = RDF::Graph.new
-        begin
-          response = Fedora.client.get(
-              url, nil, { 'Accept' => 'application/n-triples' })
-        rescue HTTPClient::BadResponseError => e
-          raise RepositoryError.from_bad_response_error(e)
-        else
-          graph.from_ntriples(response.body)
-          return graph
-        end
+        response = Fedora.get(
+            url, nil, { 'Accept' => 'application/n-triples' })
+        graph.from_ntriples(response.body)
+        return graph
       end
       nil
     end
@@ -448,11 +438,7 @@ module ActiveMedusa
         url = transactional_url(self.repository_metadata_url)
         body = self.rdf_graph.to_ttl
         headers = { 'Content-Type' => 'text/turtle' }
-        begin
-          Fedora.client.put(url, body, headers)
-        rescue HTTPClient::BadResponseError => e
-          raise RepositoryError.from_bad_response_error(e)
-        end
+        Fedora.put(url, body, headers)
       end
     end
 

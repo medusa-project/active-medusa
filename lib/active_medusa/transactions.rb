@@ -16,10 +16,10 @@ module ActiveMedusa
       #
       # @return [String] Transaction base URL
       #
-      def create_transaction(http_client)
+      def create_transaction
         repository_url = Configuration.instance.fedora_url.chomp('/')
         url = repository_url + '/fcr:tx'
-        response = http_client.post(url)
+        response = Fedora.post(url)
         response.header['Location'].first
       end
 
@@ -27,22 +27,20 @@ module ActiveMedusa
       # Commits the transaction with the given ID.
       #
       # @param id [String]
-      # @param http_client [HTTPClient]
       # @return [HTTPResponse]
       #
-      def commit_transaction(id, http_client)
-        http_client.post(id + '/fcr:tx/fcr:commit')
+      def commit_transaction(id)
+        Fedora.post(id + '/fcr:tx/fcr:commit')
       end
 
       ##
       # Rolls back the transaction with the given ID.
       #
       # @param id [String]
-      # @param http_client [HTTPClient]
       # @return [HTTPResponse]
       #
-      def rollback_transaction(id, http_client)
-        http_client.post(id + '/fcr:tx/fcr:rollback')
+      def rollback_transaction(id)
+        Fedora.post(id + '/fcr:tx/fcr:rollback')
       end
 
       ##
@@ -56,15 +54,14 @@ module ActiveMedusa
       # @raise [RuntimeError]
       #
       def transaction
-        client = Fedora.client
-        url = create_transaction(client)
+        url = create_transaction
         begin
           yield url
         rescue => e
-          rollback_transaction(url, client)
+          rollback_transaction(url)
           raise e
         else
-          commit_transaction(url, client)
+          commit_transaction(url)
         end
       end
 
