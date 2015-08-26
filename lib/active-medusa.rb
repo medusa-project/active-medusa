@@ -11,4 +11,7 @@ require 'active_medusa/version'
 require 'rdf/graph'
 
 module ActiveMedusa
+
+  LOG_PREFIX = '[ActiveMedusa]'
+
 end

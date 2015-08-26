@@ -54,18 +54,20 @@ module ActiveMedusa
 
     def self.log_request(method, url, headers = {}, body = nil)
       logger = Configuration.instance.logger
-      logger.info("#{method.to_s.upcase} #{url}")
-      logger.debug("Request headers:\n#{headers.map{ |k, v| "#{k}: #{v}" }.join("\n")}")
-      logger.debug("Request body:\n#{body.slice(0, 10000)}") if
-          body.kind_of?(String)
+      logger.info("#{ActiveMedusa::LOG_PREFIX} #{method.to_s.upcase} #{url}")
+      logger.debug("#{ActiveMedusa::LOG_PREFIX} "\
+      "Request headers:\n#{headers.map{ |k, v| "#{k}: #{v}" }.join("\n")}")
+      logger.debug("#{ActiveMedusa::LOG_PREFIX} "\
+      "Request body:\n#{body}") if body.kind_of?(String)
     end
 
     def self.log_response(status_code, status_line, headers, body = nil)
       logger = Configuration.instance.logger
-      logger.info("#{status_code} #{status_line}")
-      logger.debug("Response headers:\n#{headers.map{ |k, v| "#{k}: #{v}" }.join("\n")}")
-      logger.debug("Response body:\n#{body.slice(0, 10000)}") if
-          body.kind_of?(String)
+      logger.info("#{ActiveMedusa::LOG_PREFIX} #{status_code} #{status_line}")
+      logger.debug("#{ActiveMedusa::LOG_PREFIX} "\
+      "Response headers:\n#{headers.map{ |k, v| "#{k}: #{v}" }.join("\n")}")
+      logger.debug("#{ActiveMedusa::LOG_PREFIX} "\
+      "Response body:\n#{body}") if body.kind_of?(String)
     end
 
     def self.request(method, url, body, headers)
