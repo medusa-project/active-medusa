@@ -241,6 +241,9 @@ module ActiveMedusa
 
         @solr_response = Solr.get(endpoint, params: params)
 
+        Configuration.instance.logger.
+            debug("#{ActiveMedusa::LOG_PREFIX} Solr response:\n#{@solr_response}")
+
         if !@more_like_this and @facet
           @results.facet_fields = solr_facet_fields_to_objects(
               @solr_response['facet_counts']['facet_fields'])
