@@ -54,20 +54,22 @@ module ActiveMedusa
 
     def self.log_request(method, url, headers = {}, body = nil)
       logger = Configuration.instance.logger
-      logger.info("#{ActiveMedusa::LOG_PREFIX} #{method.to_s.upcase} #{url}")
+      logger.info("#{ActiveMedusa::LOG_PREFIX} Fedora request: "\
+      "#{method.to_s.upcase} #{url}")
       logger.debug("#{ActiveMedusa::LOG_PREFIX} "\
-      "Request headers:\n#{headers.map{ |k, v| "#{k}: #{v}" }.join("\n")}")
+      "Fedora request headers:\n#{headers.map{ |k, v| "#{k}: #{v}" }.join("\n")}")
       logger.debug("#{ActiveMedusa::LOG_PREFIX} "\
-      "Request body:\n#{body}") if body.kind_of?(String)
+      "Fedora request body:\n#{body}") if body.kind_of?(String)
     end
 
     def self.log_response(status_code, status_line, headers, body = nil)
       logger = Configuration.instance.logger
-      logger.info("#{ActiveMedusa::LOG_PREFIX} #{status_code} #{status_line}")
+      logger.info("#{ActiveMedusa::LOG_PREFIX} Fedora response status: "\
+      "#{status_code} #{status_line}")
       logger.debug("#{ActiveMedusa::LOG_PREFIX} "\
-      "Response headers:\n#{headers.map{ |k, v| "#{k}: #{v}" }.join("\n")}")
+      "Fedora response headers:\n#{headers.map{ |k, v| "#{k}: #{v}" }.join("\n")}")
       logger.debug("#{ActiveMedusa::LOG_PREFIX} "\
-      "Response body:\n#{body}") if body.kind_of?(String)
+      "Fedora response body:\n#{body}") if body.kind_of?(String)
     end
 
     def self.request(method, url, body, headers)

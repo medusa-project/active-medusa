@@ -262,8 +262,8 @@ module ActiveMedusa
             # is nothing we can do except swallow it and log it to avoid
             # disrupting the user experience.
             Configuration.instance.logger.
-                error("Item present in Solr result is missing from "\
-                "repository: #{e.message}")
+                error("#{ActiveMedusa::LOG_PREFIX} Item present in Solr "\
+                "result is missing from repository: #{e.message}")
             @results.total_length -= 1
           rescue => e
             Configuration.instance.logger.error("#{e} (#{doc['id']})")
