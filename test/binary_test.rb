@@ -124,8 +124,9 @@ class BinaryTest < Minitest::Test
     graph = RDF::Graph.new
     graph.from_ntriples(response.body)
     graph.each_statement do |st|
-      if st.predicate.to_s == 'http://www.loc.gov/premis/rdf/v1#hasOriginalName'
+      if st.predicate.to_s == 'http://www.ebu.ch/metadata/ontologies/ebucore/ebucore#filename'
         assert_equal 'carrots.txt', st.object.to_s
+        break
       end
     end
   end
@@ -152,8 +153,9 @@ class BinaryTest < Minitest::Test
     graph = RDF::Graph.new
     graph.from_ntriples(response.body)
     graph.each_statement do |st|
-      if st.predicate.to_s == 'http://www.loc.gov/premis/rdf/v1#hasOriginalName'
+      if st.predicate.to_s == 'http://www.ebu.ch/metadata/ontologies/ebucore/ebucore#filename'
         assert_equal 'carrots.txt', st.object.to_s
+        break
       end
     end
   end
