@@ -19,6 +19,7 @@ module ActiveMedusa
   class Base
 
     extend ActiveModel::Callbacks
+    extend Gem::Deprecate
     include ActiveModel::Model
     include GlobalID::Identification
     include Querying
@@ -206,6 +207,8 @@ module ActiveMedusa
       nil
     end
 
+    deprecate :created_at, :none, 2016, 02
+
     ##
     # Destroys the instance's corresponding repository node, marks the instance
     # as destroyed, and freezes it.
@@ -321,6 +324,8 @@ module ActiveMedusa
       end
       nil
     end
+
+    deprecate :updated_at, :none, 2016, 02
 
     protected
 
