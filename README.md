@@ -473,25 +473,35 @@ can specify an IO stream to read:
 b.upload_io = File.read(File.join('path', 'to', 'a', 'file.tif'))
 ```
 
-Or, you can specify an external URL:
+Or a pathname:
+
+```ruby
+b.upload_pathname = File.join('path', 'to', 'a', 'file.tif')
+```
+
+Or an external URL:
 
 ```ruby
 b.external_resource_url = 'http://example.org/'
 ```
 
-Optionally, but ideally, you should also specify the binary's media type:
+Optionally, you can also assign a media (MIME) type:
 
 ```ruby
 b.media_type = 'image/tiff'
 ```
 
-If you want, you can override its filename (non-URLs only):
+For non-URLs only: if you used `upload_pathname`, the binary's filename will be
+taken from that, and stored in an `ebucore:filename` triple in Fedora. This
+filename can be overridden by setting the `upload_filename` property. If you
+instead used `upload_io`, there is no filename set yet, so you should set
+`upload_filename` to assign a filename:
 
 ```ruby
 b.upload_filename = 'overridden.tif'
 ```
 
-At this point, it can be saved just like a container:
+At this point, the binary can be saved just like a container:
 
 ```ruby
 b.save!
@@ -510,12 +520,12 @@ is available via its `rdf_graph` accessor, just like a container.
 index has been committed. ActiveMedusa will not commit it automatically.*
 
 *Note 2: If you are using fcrepo-message-consumer or fcrepo-camel, newly
-created entities will not appear in search results in the same thread unless
-enough time has elapsed between creation and query for Solr to have received
-them, which will rarely be the case. An ugly way of getting around this is to
-`sleep` for a bit after saving an entity to wait for Solr to catch up - hoping
-that it does in time. This is a crude workaround for a fundamental consequence
-of this kind of asynchronous messaging architecture.*
+created entities will not appear in search results unless enough time has
+elapsed between creation and query for Solr to have received them, which will
+rarely be the case. An ugly way of getting around this is to `sleep` for a bit
+after saving an entity to wait for Solr to catch up - hoping that it does in
+time. This is a crude workaround for a fundamental consequence of this kind of
+asynchronous messaging architecture.*
 
 ```ruby
 items = Item.all.where(some_property: 'cats').
@@ -551,8 +561,7 @@ puts items.count # shortcut for items.to_a.total_length
 ### Start/Limit
 
 ```ruby
-items = Item.all
-puts items.start(20).limit(20)
+items = Item.all.start(20).limit(20)
 ```
 
 ### Faceting
@@ -648,7 +657,7 @@ committed, meaning you won't be able to query for entities created within the
 same transaction.*
 
 *Note: if you are using `ActiveMedusa::Indexable`, keep in mind that rolling
-back a transaction will **not** roll back any changes to Solr made from within
+back a transaction will not roll back any changes to Solr made from within
 the transaction.*
 
 ## Validation
@@ -739,7 +748,7 @@ commits and tags, and push the `.gem` file to
 
 # Contributing
 
-1. Fork it (https://github.com/[my-github-username]/active-medusa/fork)
+1. Fork it (https://github.com/medusa-project/active-medusa/fork)
 2. Create your feature branch (`git checkout -b my-new-feature`)
 3. Commit your changes (`git commit -am 'Add some feature'`)
 4. Push to the branch (`git push origin my-new-feature`)
