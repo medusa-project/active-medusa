@@ -38,6 +38,21 @@ class BinaryTest < Minitest::Test
     flunk unless found
   end
 
+  # fixity
+
+  def test_fixity
+    # non-persisted binary should have a nil fixity
+    bs = Bytestream.new
+    assert_nil bs.fixity
+    bs = Bytestream.create!(parent_url: @config.fedora_url,
+                            upload_pathname: __FILE__,
+                            requested_slug: SLUGS[0],
+                            media_type: 'text/plain')
+    fixity = bs.fixity
+    assert fixity.content_location.present?
+    assert fixity.repository_url.present?
+  end
+
   # repository_fixity_url
 
   def test_repository_fixity_url

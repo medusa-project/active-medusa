@@ -34,6 +34,23 @@ module ActiveMedusa
     #   @deprecated Use {#upload_io} instead
     attr_accessor :upload_pathname
 
+    ##
+    # Checks the fixity. Works only on persisted entities.
+    #
+    # @return [ActiveMedusa::Fixity, nil]
+    #
+    def fixity
+      url = repository_fixity_url
+      if url
+        response = Fedora.client.get(url, nil,
+                                     { 'Accept' => 'application/n-triples' })
+        graph = RDF::Graph.new
+        graph.from_ntriples(response.body)
+        return Fixity.from_graph(graph)
+      end
+      nil
+    end
+
     def repository_fixity_url
       self.repository_url ?
           "#{transactional_url(self.repository_url).chomp('/')}/fcr:fixity" :
