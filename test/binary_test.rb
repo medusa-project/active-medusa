@@ -38,6 +38,17 @@ class BinaryTest < Minitest::Test
     flunk unless found
   end
 
+  # repository_fixity_url
+
+  def test_repository_fixity_url
+    url = "http://example.org/#{SLUGS[0]}"
+    bs = Bytestream.new(repository_url: url)
+    assert_equal url + '/fcr:fixity', bs.repository_fixity_url
+
+    bs = Bytestream.new(repository_url: nil)
+    assert_nil bs.repository_fixity_url
+  end
+
   # repository_metadata_url
 
   def test_repository_metadata_url
