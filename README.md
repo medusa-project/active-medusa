@@ -18,6 +18,7 @@ using Solr for lookup and querying.
 * Supports binary and container nodes, both of which are first-class, queryable
   entities.
 * Supports Fedora transactions.
+* Built-in Fixity checks on binaries.
 * Direct read/write access to entities' source RDF graphs.
 * Supports "belongs-to" and "has-many" relationships between entities.
 * No-configuration support for node hierarchy traversal via automatic `parent`
@@ -659,6 +660,11 @@ same transaction.*
 *Note: if you are using `ActiveMedusa::Indexable`, keep in mind that rolling
 back a transaction will not roll back any changes to Solr made from within
 the transaction.*
+
+## Fixity
+
+Fixity checks can be performed by calling the `fixity` method on an
+`ActiveMedusa::Binary`. The return value is an `ActiveMedusa::Fixity` object.
 
 ## Validation
 
