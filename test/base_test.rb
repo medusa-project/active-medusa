@@ -254,21 +254,27 @@ class BaseTest < Minitest::Test
   end
 
   ##
-  # When a child node N2 is added to a node N1, N1's lastModified triple gets
-  # updated. This tests whether a stale instance of N1 will still save.
+  # When a child node N2 is added to a parent node N1, N1's lastModified triple
+  # gets updated. This tests whether a stale instance of N1 will still save
+  # (it shouldn't).
   #
   def test_stale_save
+    # create & save N1 (parent)
     collection = Collection.create!(parent_url: @config.fedora_url,
                                     requested_slug: SLUGS[0],
                                     key: 'cats')
-
+    # create & save N2 (child), disassociated from N1
     item = Item.create!(parent_url: collection.repository_url,
                         requested_slug: SLUGS[1])
+    # set its collection to N1
     item.collection = collection
+    # save it again
     item.save!
 
-    collection.key = 'dogs'
-    collection.save! # absence of an error is a pass
+    assert_raises ActiveMedusa::RepositoryError do
+      collection.key = 'dogs'
+      collection.save!
+    end
   end
 
   # update
