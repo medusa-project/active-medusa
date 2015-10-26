@@ -25,7 +25,7 @@ class QueryingTest < Minitest::Test
   def test_find
     uri = @config.fedora_url + '/item1'
     assert_instance_of Item, Item.find(uri)
-    assert_raises HTTPClient::BadResponseError do
+    assert_raises ActiveMedusa::RepositoryError do
       assert_nil Item.find_by_uri(uri + 'adfasfd')
     end
     assert_raises SocketError do
@@ -36,7 +36,7 @@ class QueryingTest < Minitest::Test
   def test_find_by_id
     uri = @config.fedora_url + '/item1'
     assert_instance_of Item, Item.find_by_id(uri)
-    assert_raises HTTPClient::BadResponseError do
+    assert_raises ActiveMedusa::RepositoryError do
       assert_nil Item.find_by_uri(uri + 'adfasfd')
     end
   end
@@ -49,7 +49,7 @@ class QueryingTest < Minitest::Test
   def test_find_by_uri
     uri = @config.fedora_url + '/item1'
     assert_instance_of Item, Item.find_by_uri(uri)
-    assert_raises HTTPClient::BadResponseError do
+    assert_raises ActiveMedusa::RepositoryError do
       assert_nil Item.find_by_uri(uri + 'adfasfd')
     end
   end
