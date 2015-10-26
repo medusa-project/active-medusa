@@ -28,6 +28,7 @@ class Item < ActiveMedusa::Container
   after_create :do_after_create
   before_destroy :do_before_destroy
   after_destroy :do_after_destroy
+  after_initialize :do_after_initialize
   before_load :do_before_load
   after_load :do_after_load
   before_save :do_before_save
@@ -51,6 +52,10 @@ class Item < ActiveMedusa::Container
 
   def do_after_destroy
     # can't set an ivar here because the instance will be frozen
+  end
+
+  def do_after_initialize
+    @after_initialize_called = true
   end
 
   def do_before_load

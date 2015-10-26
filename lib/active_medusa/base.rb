@@ -28,8 +28,8 @@ module ActiveMedusa
 
     REJECT_PARAMS = [:id]
 
-    define_model_callbacks :create, :destroy, :load, :save, :update,
-                           :validation, only: [:after, :before]
+    define_model_callbacks :create, :destroy, :initialize, :load, :save,
+                           :update, :validation, only: [:after, :before]
 
     @@entity_class_uris = Set.new
     @@properties = Set.new
@@ -178,18 +178,20 @@ module ActiveMedusa
     #
     def initialize(params = {})
       raise ArgumentError, 'Invalid arguments' unless params.kind_of?(Hash)
-      super() # call module initializers
-      @destroyed = @loaded = @persisted = false
-      @rdf_graph = new_rdf_graph
-      params.except(*REJECT_PARAMS).each do |k, v|
-        if k.to_sym == :rdf_graph
-          # copy statements from the graph instead of overwriting the
-          # instance's graph (which may not be empty)
-          v.each_statement do |st|
-            self.rdf_graph << [RDF::URI(), st.predicate, st.object]
+      run_callbacks :initialize do
+        super() # call module initializers
+        @destroyed = @loaded = @persisted = false
+        @rdf_graph = new_rdf_graph
+        params.except(*REJECT_PARAMS).each do |k, v|
+          if k.to_sym == :rdf_graph
+            # copy statements from the graph instead of overwriting the
+            # instance's graph (which may not be empty)
+            v.each_statement do |st|
+              self.rdf_graph << [RDF::URI(), st.predicate, st.object]
+            end
+          elsif respond_to?("#{k}=")
+            send("#{k}=", v)
           end
-        elsif respond_to?("#{k}=")
-          send("#{k}=", v)
         end
       end
     end

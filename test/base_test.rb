@@ -75,6 +75,11 @@ class BaseTest < Minitest::Test
 
   # initialize
 
+  def test_initialize_callbacks
+    item = Item.new
+    assert item.instance_variable_get('@after_initialize_called')
+  end
+
   def test_initialize_requires_a_hash
     assert_raises ArgumentError do
       Item.new('cats')

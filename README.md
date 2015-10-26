@@ -692,6 +692,7 @@ Your entities can use the following `ActiveModel::Model` callbacks:
 * `before_validation`
 * `after_create`
 * `after_destroy`
+* `after_initialize`
 * `after_load`
 * `after_save`
 * `after_update`
