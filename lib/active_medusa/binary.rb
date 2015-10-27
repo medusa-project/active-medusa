@@ -103,13 +103,11 @@ module ActiveMedusa
           response = Fedora.post(url, upload_io, headers)
         elsif self.external_resource_url
           url = transactional_url(self.parent_url)
-          headers = { 'Content-Type' => 'text/plain' }
+          headers = { 'Content-Type' => "message/external-body; "\
+          "access-type=URL; URL=\"#{self.external_resource_url}\"" }
           headers['Slug'] = self.requested_slug if
               self.requested_slug.present?
           response = Fedora.post(url, nil, headers)
-          headers = { 'Content-Type' => "message/external-body; "\
-          "access-type=URL; URL=\"#{self.external_resource_url}\"" }
-          Fedora.put(response.header['Location'].first, nil, headers)
         else
           raise 'Unable to save binary: both upload_pathname and '\
           'external_resource_url are nil.'
